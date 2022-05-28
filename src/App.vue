@@ -4,7 +4,9 @@
       <div ref="handler" class="resize-handle" />
     </aside>
 
-    <div class="screen"></div>
+    <div class="screen">
+      <slot />
+    </div>
   </div>
 </template>
 

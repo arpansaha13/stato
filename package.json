@@ -1,19 +1,47 @@
 {
-  "name": "rapibook",
-  "description": "A lightweight tool for UI development.",
+  "name": "vitle",
+  "packageManager": "pnpm@7.0.0",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Arpan Saha <https://github.com/lemontreejs>",
+  "description": "A lightweight tool for UI development for vue3.",
+  "type": "module",
+  "bin": {
+    "vitle": "./bin/vitle.mjs"
+  },
+  "license": "ISC",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite --open",
-    "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "build": "unbuild",
+    "build:vite": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "clean": "if exist package rd package /s /q",
+    "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
+    "package": "pnpm prepack && cd package && pnpm pack"
   },
   "devDependencies": {
+    "@types/node": "^17.0.36",
+    "@types/normalize-path": "^3.0.0",
     "@vitejs/plugin-vue": "^2.3.3",
     "@vueuse/core": "^8.5.0",
+    "fast-glob": "^3.2.11",
+    "mri": "^1.2.0",
+    "normalize-path": "^3.0.0",
     "typescript": "^4.5.4",
+    "unbuild": "^0.7.4",
     "vite": "^2.9.9",
     "vue": "^3.2.36",
     "vue-tsc": "^0.34.7"
-  }
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "keywords": [
+    "vitle",
+    "vue",
+    "components"
+  ]
 }
