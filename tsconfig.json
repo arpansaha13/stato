@@ -24,7 +24,12 @@
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "cli/**/*.ts"
+  ],
+  "exclude": [
+    "dist",
+    "node_modules"
   ],
   "references": [
     {
