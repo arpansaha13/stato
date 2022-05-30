@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
-    "build": "pnpm typecheck && unbuild",
+    "build": "pnpm typecheck && unbuild && node esbuild.config.js",
     "clean": "if exist dist rd dist /s /q",
     "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
     "package": "pnpm prepack && cd dist && pnpm pack"
@@ -28,6 +28,7 @@
     "@types/node": "^17.0.36",
     "@types/normalize-path": "^3.0.0",
     "@vueuse/core": "^8.5.0",
+    "esbuild": "^0.14.42",
     "fast-glob": "^3.2.11",
     "mri": "^1.2.0",
     "normalize-path": "^3.0.0",

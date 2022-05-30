@@ -1,8 +1,6 @@
 import { defineComponent, h } from 'vue'
 import { useHResize } from './composables/useHResize'
 
-console.log(import.meta)
-
 export default defineComponent({
   setup() {
     if ((import.meta as any).hot) {
