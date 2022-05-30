@@ -2,12 +2,20 @@
   "name": "awast",
   "packageManager": "pnpm@7.0.0",
   "private": true,
-  "version": "1.0.0",
+  "version": "0.0.0",
   "author": "Arpan Saha <https://github.com/lemontreejs>",
   "description": "A lightweight tool for UI development for vue3.",
   "type": "module",
   "bin": "./bin/awast.mjs",
   "license": "ISC",
+  "homepage": "https://github.com/lemontreejs/awast",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lemontreejs/awast"
+  },
+  "bugs": {
+    "url": "https://github.com/lemontreejs/awast/issues"
+  },
   "files": [
     "dist"
   ],
