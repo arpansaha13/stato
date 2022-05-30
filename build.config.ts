@@ -4,7 +4,7 @@ export default defineBuildConfig({
   rollup: {
     inlineDependencies: true,
   },
-  entries: ['cli/index'],
+  entries: ['cli/index', 'src/main'],
   outDir: 'dist/dist',
   externals: [
     'vue',

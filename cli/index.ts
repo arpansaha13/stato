@@ -1,7 +1,7 @@
 import { commands } from './commands/index'
 import mri from 'mri'
 // import normalize from 'normalize-path'
-// import type { Book, VitleCommand } from './types'
+// import type { Book, AwastCommand } from './types'
 
 export default function main() {
   const args = mri(process.argv.slice(2))

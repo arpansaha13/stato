@@ -15,7 +15,8 @@
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
     "types": [
-      "node"
+      "node",
+      "vite/client"
     ],
     "lib": [
       "esnext",

@@ -1,7 +1,7 @@
 import type { Argv } from 'mri'
 import type { DefineComponent } from 'vue'
 
-export interface VitleConfig {
+export interface AwastConfig {
   content: string[]
 }
 
@@ -14,7 +14,7 @@ export interface Book {
   stories: Story[]
 }
 
-export interface VitleCommand {
+export interface AwastCommand {
   meta: {
     name: string
   }

@@ -4,11 +4,11 @@ import { join, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, ViteDevServer } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import type { VitleConfig } from '../types'
+import type { AwastConfig } from '../types'
 
 async function config(root: string): Promise<string[]> {
-  const config: Readonly<VitleConfig> = await import(
-    pathToFileURL(join(root, 'vitle.config.js')).href
+  const config: Readonly<AwastConfig> = await import(
+    pathToFileURL(join(root, 'awast.config.js')).href
   ).then((r) => r.default ?? r)
 
   return fg(config.content)
@@ -35,7 +35,17 @@ export async function dev(args: Argv) {
   try {
     const server = await createServer({
       configFile: false,
-      plugins: [vue()],
+      plugins: [
+        vue(),
+        {
+          name: 'awast',
+          configureServer(server) {
+            server.ws.on('connection', () => {
+              server.ws.send('awast:storyPaths', storyPaths)
+            })
+          },
+        },
+      ],
       mode: 'development',
       server: {
         open: args.open ?? false,

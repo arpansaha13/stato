@@ -1,12 +1,12 @@
 {
-  "name": "vitle",
+  "name": "awast",
   "packageManager": "pnpm@7.0.0",
   "private": true,
   "version": "1.0.0",
   "author": "Arpan Saha <https://github.com/lemontreejs>",
   "description": "A lightweight tool for UI development for vue3.",
   "type": "module",
-  "bin": "./bin/vitle.mjs",
+  "bin": "./bin/awast.mjs",
   "license": "ISC",
   "files": [
     "dist"
@@ -14,7 +14,7 @@
   "scripts": {
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
-    "build": "pnpm typecheck && unbuild && vite build",
+    "build": "pnpm typecheck && unbuild",
     "clean": "if exist dist rd dist /s /q",
     "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
     "package": "pnpm prepack && cd dist && pnpm pack"
@@ -39,7 +39,7 @@
     "vue": "^3.2.36"
   },
   "keywords": [
-    "vitle",
+    "awast",
     "vue",
     "components"
   ]

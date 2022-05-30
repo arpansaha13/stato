@@ -22,20 +22,20 @@ import pkg from '../package.json' assert { type: 'json' }
 //   include: [], // runtime
 // }
 
-// const document = `
-//   <!DOCTYPE html>
-//   <html lang="en">
-//     <head>
-//       <meta charset="UTF-8" />
-//       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-//       <title>Vitle</title>
-//     </head>
-//     <body>
-//       <div id="app"></div>
-//       <script type="module" src="./dist/main.mjs"></script>
-//     </body>
-//   </html>
-// `
+const document = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Awast</title>
+    </head>
+    <body>
+      <div id="app"></div>
+      <script type="module" src="./dist/main.mjs"></script>
+    </body>
+  </html>
+`
 
 async function copyDir(src, dest) {
   await promises.mkdir(dest, { recursive: true })
@@ -70,10 +70,10 @@ async function prepack() {
     resolve(__dirname, '..', 'dist', 'package.json'),
     Buffer.from(JSON.stringify(pkg, null, 2), 'utf-8')
   )
-  // await promises.writeFile(
-  //   resolve(__dirname, '..', 'dist', 'index.html'),
-  //   Buffer.from(document, 'utf-8')
-  // )
+  await promises.writeFile(
+    resolve(__dirname, '..', 'dist', 'index.html'),
+    Buffer.from(document, 'utf-8')
+  )
 }
 
 prepack()

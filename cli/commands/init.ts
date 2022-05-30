@@ -11,7 +11,7 @@ export async function init() {
   const root = process.cwd()
 
   await promises.writeFile(
-    resolve(root, 'vitle.config.js'),
+    resolve(root, 'awast.config.js'),
     Buffer.from(config, 'utf-8')
   )
 }
