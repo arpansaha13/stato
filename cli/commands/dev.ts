@@ -1,10 +1,28 @@
 import { Argv } from 'mri'
 import fg from 'fast-glob'
-import { dirname, resolve } from 'path'
+import rimraf from 'rimraf'
+import { existsSync, promises } from 'fs'
+import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { createServer } from 'vite'
+import { createServer, build } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { AwastConfig } from '../../types'
+
+async function createDevDir() {
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = dirname(__filename)
+
+  if (existsSync(resolve(__dirname, '..', '.awast'))) {
+    rimraf(resolve(__dirname, '..', '.awast'), (err) => {
+      console.log(err)
+      process.exit(1)
+    })
+    createDevDir()
+  } else {
+    await promises.mkdir(resolve(__dirname, '..', '.awast'))
+    await promises.mkdir(resolve(__dirname, '..', '.awast', 'chunks'))
+  }
+}
 
 export async function config(): Promise<string[]> {
   const root = process.cwd()
@@ -22,10 +40,46 @@ export async function config(): Promise<string[]> {
   return resolvedPaths
 }
 
+async function bundleStories() {
+  const __filename = fileURLToPath(import.meta.url)
+  const __dirname = dirname(__filename)
+  const storyPaths = await config()
+  console.log('bundling stories...\n')
+
+  for (const entry of storyPaths) {
+    const filename = basename(entry)
+    const name = filename.substring(0, filename.indexOf('.stories.ts'))
+    console.log(`\t> ${filename}\n`)
+    await build({
+      plugins: [vue()],
+      root: resolve(__dirname, '..', '.awast'),
+      logLevel: 'error',
+      build: {
+        lib: {
+          name,
+          entry,
+          formats: ['es'],
+          fileName: () => `index.mjs`,
+        },
+        outDir: resolve(__dirname, '..', '.awast', 'chunks', name),
+        emptyOutDir: false,
+        rollupOptions: {
+          external: ['vue'],
+        },
+      },
+      esbuild: {
+        // minify: true,
+      },
+    })
+  }
+}
+
 export async function dev(args: Argv) {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
 
+  await createDevDir()
+  await bundleStories()
   const storyPaths = await config()
 
   try {
@@ -44,7 +98,8 @@ export async function dev(args: Argv) {
       ],
       mode: 'development',
       server: {
-        open: args.open ?? false,
+        // open: args.open ?? false,
+        open: false,
       },
       root: resolve(__dirname, '..'),
       build: {
