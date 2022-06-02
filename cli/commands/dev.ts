@@ -1,36 +1,32 @@
 import { Argv } from 'mri'
 import fg from 'fast-glob'
-import { join, dirname, resolve } from 'path'
+import { dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { createServer, ViteDevServer } from 'vite'
+import { createServer } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import type { AwastConfig } from '../types'
+import { AwastConfig } from '../../types'
 
-async function config(root: string): Promise<string[]> {
+export async function config(): Promise<string[]> {
+  const root = process.cwd()
+
   const config: Readonly<AwastConfig> = await import(
-    pathToFileURL(join(root, 'awast.config.js')).href
+    pathToFileURL(resolve(root, 'awast.config.js')).href
   ).then((r) => r.default ?? r)
 
-  return fg(config.content)
+  const paths = await fg(config.content)
+  const resolvedPaths: string[] = []
 
-  // const books: Readonly<Book>[] = []
-
-  // for (const path of paths) {
-  //   if (path.endsWith('.stories.ts')) {
-  //     console.log(pathToFileURL(join(root, path)).href)
-  //     const temp = await import(pathToFileURL(join(root, path)).href)
-  //     console.log(temp)
-  //     books.push(await import(join(root, path)))
-  //   }
-  // }
+  for (const path of paths.filter((v) => v.endsWith('.stories.ts'))) {
+    resolvedPaths.push(resolve(root, path))
+  }
+  return resolvedPaths
 }
 
 export async function dev(args: Argv) {
-  const root = process.cwd()
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
 
-  const storyPaths = await config(root)
+  const storyPaths = await config()
 
   try {
     const server = await createServer({
@@ -54,7 +50,7 @@ export async function dev(args: Argv) {
       build: {
         rollupOptions: {
           input: {
-            app: resolve(__dirname, '../index.html'),
+            app: resolve(__dirname, '..', 'index.html'),
           },
         },
       },

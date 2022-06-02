@@ -5,13 +5,12 @@ export interface AwastConfig {
   content: string[]
 }
 
-type Story = () => DefineComponent<{}, {}, any>
-
 export interface Book {
-  default: {
-    name: string
+  name: string
+  component?: any
+  stories: {
+    [key: string]: any
   }
-  stories: Story[]
 }
 
 export interface AwastCommand {

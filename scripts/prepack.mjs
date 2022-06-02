@@ -4,24 +4,6 @@ import { fileURLToPath } from 'url'
 
 import pkg from '../package.json' assert { type: 'json' }
 
-// const tsconfig = {
-//   compilerOptions: {
-//     jsx: 'preserve',
-//     target: 'ESNext',
-//     module: 'ESNext',
-//     moduleResolution: 'Node',
-//     skipLibCheck: true,
-//     strict: false,
-//     allowJs: true,
-//     noEmit: true,
-//     resolveJsonModule: true,
-//     allowSyntheticDefaultImports: true,
-//     types: ['node'],
-//     baseUrl: '.', // runtime
-//   },
-//   include: [], // runtime
-// }
-
 const document = `
   <!DOCTYPE html>
   <html lang="en">

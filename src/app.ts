@@ -1,15 +1,16 @@
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, shallowRef, type ShallowRef } from 'vue'
 import { useHResize } from './composables/useHResize'
 
 export default defineComponent({
   setup() {
-    if ((import.meta as any).hot) {
-      ;(import.meta as any).hot.on(
-        'awast:storyPaths',
-        (storyPaths: string[]) => {
-          console.log(storyPaths)
-        }
-      )
+    const storyPaths: ShallowRef<string[]> = shallowRef([])
+
+    if (import.meta.hot) {
+      import.meta.hot.on('awast:storyPaths', (data: string[]) => {
+        storyPaths.value = data
+      })
+    } else {
+      console.warn('No event received from server')
     }
     const style = useHResize(
       'target',

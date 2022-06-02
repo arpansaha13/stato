@@ -20,6 +20,7 @@
     "dist"
   ],
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
     "build": "pnpm typecheck && unbuild && node esbuild.config.js",
