@@ -4,13 +4,12 @@ import App from './app'
 import './styles/index.css'
 
 const chunks = import.meta.globEager('../dev/*/index.mjs')
-const modulesTable: { [key: string]: string[] } = {}
+const modulesTable: Map<string, string[]> = new Map()
+
+const app = createApp(App, { modulesTable })
 
 for (const path in chunks) {
   const { default: mod } = chunks[path]
-  console.log(mod)
-  const storyNames = Object.keys(mod.stories)
-  modulesTable[mod.name] = storyNames
+  modulesTable.set(mod.name, Object.keys(mod.stories))
 }
-const app = createApp(App, { modulesTable })
 app.mount('#app')

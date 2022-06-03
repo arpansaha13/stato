@@ -1,12 +1,12 @@
-// `h` has to be imported foir jsx transform
-import { defineComponent, h } from 'vue'
+// `h` has to be imported for jsx transform
+import { defineComponent, h, PropType } from 'vue'
 import { useHResize } from './composables/useHResize'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 
 export default defineComponent({
   props: {
     modulesTable: {
-      type: Object,
+      type: Map as PropType<Map<string, string[]>>,
       required: true,
     },
   },
@@ -22,25 +22,35 @@ export default defineComponent({
       <div class="container">
         <aside ref="target" class="sidebar" style={ style.value } >
           {
-            Object.keys(props.modulesTable).map((mod) =>
-              <Disclosure as="ul" key={ mod }>
-                <DisclosureButton> { mod } </DisclosureButton>
-                <DisclosurePanel>
-                  {
-                    props.modulesTable[mod].map((story: string) =>
-                      <li v-for="story in val" key={ story }>
-                        { story }
-                      </li>
-                    )
-                  }
-                </DisclosurePanel>
-              </Disclosure>
-            )
+            (() => {
+              const mods = []
+              for (const [ modName, storyNames ] of props.modulesTable) {
+                mods.push(
+                  <Disclosure as="ul" key={ modName }>
+                    <DisclosureButton> { modName } </DisclosureButton>
+                    <DisclosurePanel>
+                      {
+                        storyNames.map((story: string) =>
+                          <li key={ story }>
+                            { story }
+                          </li>
+                        )
+                      }
+                    </DisclosurePanel>
+                  </Disclosure>
+                )
+              }
+              return mods
+            })()
           }
-          <div ref="handler" class="resize-handle" />
         </aside>
 
-        <div class="screen">screen</div>
+        <main class="workspace">
+          <div ref="handler" class="resize-handle" />
+          <div class="screen">
+            screen
+          </div>
+        </main>
       </div>
     )
   },
