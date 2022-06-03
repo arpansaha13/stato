@@ -2,21 +2,31 @@
   display: flex;
   width: 100vw;
   height: 100vh;
+  overflow: hidden;
+
+  --resize-handle-width: 4px;
+  --sidebar-bgcolor: #e5e7eb;
 }
 .sidebar {
   height: 100%;
-  background-color: #e5e7eb;
+  overflow: auto;
+  background-color: var(--sidebar-bgcolor);
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
 }
-.screen {
+.workspace {
+  position: relative;
   height: 100%;
   flex-grow: 1;
+  padding-left: var(--resize-handle-width);
 }
 .resize-handle {
-  margin-left: auto;
-  width: 4px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--resize-handle-width);
   height: 100%;
   cursor: ew-resize;
+  background-color: var(--sidebar-bgcolor);
   transition-property: background-color;
   transition-duration: 300ms;
   transition-delay: 300ms;
