@@ -3,6 +3,10 @@ import { defineBuildConfig } from 'unbuild'
 export default defineBuildConfig({
   rollup: {
     inlineDependencies: true,
+    esbuild: {
+      jsxFactory: 'h',
+      jsxFragment: 'Fragment',
+    },
   },
   entries: ['cli/index', 'src/main'],
   outDir: 'dist/dist',
@@ -15,7 +19,7 @@ export default defineBuildConfig({
     'node:child_process',
     'node:process',
     'node:path',
-    'node:os',
     '@vitejs/plugin-vue',
+    '@vitejs/plugin-vue-jsx',
   ],
 })

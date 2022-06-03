@@ -14,7 +14,6 @@
     "esModuleInterop": true,
     "noImplicitAny": true,
     "allowSyntheticDefaultImports": true,
-    // "noUnusedLocals": true,
     "types": [
       "node",
       "vite/client"
@@ -26,9 +25,10 @@
   },
   "include": [
     "src/**/*.ts",
+    "src/**/*.tsx",
     "src/**/*.vue",
     "cli/**/*.ts",
-    "types/*.ts"
+    "types/*.ts",
   ],
   "exclude": [
     "dist",
