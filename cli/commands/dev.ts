@@ -61,15 +61,15 @@ async function bundleStories() {
 
 // async function getModulesTable() {
 //   const chunks = import.meta.glob('../dev/*/index.mjs')
-//   const modulesTable: { [key: string]: string[] } = {}
+//   const sidebarMap: { [key: string]: string[] } = {}
 
 //   for (const path in chunks) {
 //     await chunks[path]().then(({ default: module }) => {
 //       const storyNames = Object.keys(module.stories)
-//       modulesTable[module.name] = storyNames
+//       sidebarMap[module.name] = storyNames
 //     })
 //   }
-//   return modulesTable
+//   return sidebarMap
 // }
 
 export async function dev(args: Argv) {
@@ -77,7 +77,7 @@ export async function dev(args: Argv) {
   const __dirname = dirname(__filename)
 
   await bundleStories()
-  // const modulesTable = await getModulesTable()
+  // const sidebarMap = await getModulesTable()
 
   try {
     const server = await createServer({
