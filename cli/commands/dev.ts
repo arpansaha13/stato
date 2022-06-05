@@ -45,6 +45,7 @@ async function bundleStories() {
           fileName: () => 'index.mjs',
         },
         outDir: resolve(__dirname, '..', 'dev', name),
+        watch: {},
         // emptyOutDir: false,
         rollupOptions: {
           external: ['vue'],
