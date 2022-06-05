@@ -83,7 +83,16 @@ export async function dev(args: Argv) {
   try {
     const server = await createServer({
       configFile: false,
-      plugins: [vue(), vuejsx()],
+      plugins: [
+        vue(),
+        vuejsx(),
+        {
+          name: 'awast',
+          configureServer(s) {
+            s.ws.on('connection', () => {})
+          },
+        },
+      ],
       mode: 'development',
       server: {
         open: args.open ?? false,

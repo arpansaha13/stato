@@ -2,8 +2,8 @@
 import { defineComponent, h, ref, ShallowRef, shallowRef, watch, type PropType } from 'vue'
 import { useHResize } from './composables/useHResize'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { createStoryComponent } from './composables/createStoryComponent'
 import type { Story, StoryReturn } from '../types'
+import StoryDisplay from './components/StoryDisplay'
 
 export default defineComponent({
   props: {
@@ -31,7 +31,7 @@ export default defineComponent({
       }
       else {
         const [bookName, storyName] = activeStoryMapKey.value.split('/')
-        console.warn(`Story ${storyName} of book ${bookName} is not a function. The stories should be a function that return a string.`)
+        console.warn(`Story ${storyName} of book ${bookName} is not a function.`)
       }
     })
     const style = useHResize(
@@ -44,7 +44,6 @@ export default defineComponent({
     return () => (
       <div class="container">
         <aside ref="target" class="sidebar" style={ style.value } >
-          { activeStoryMapKey.value }
           {
             (() => {
               const books = []
@@ -75,7 +74,8 @@ export default defineComponent({
           <div ref="handler" class="resize-handle" />
           <div class="screen">
             screen
-            { h(createStoryComponent(activeStory.value)) }
+            {/* <StoryDisplay story={ activeStory.value } /> */}
+            {/* { h(createStoryComponent(activeStory.value)) } */}
           </div>
         </main>
       </div>

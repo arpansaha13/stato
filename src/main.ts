@@ -4,14 +4,15 @@ import { Story } from '../types'
 
 import './styles/index.css'
 
-const chunks = import.meta.globEager('../dev/*/index.mjs')
+const modules = import.meta.globEager('../dev/*/index.mjs')
+
 const sidebarMap: Map<string, string[]> = new Map()
 const storyMap: Map<string, Story> = new Map()
 
 const app = createApp(App, { sidebarMap, storyMap })
 
-for (const path in chunks) {
-  const { default: book } = chunks[path]
+for (const path in modules) {
+  const { default: book } = modules[path]
   if (sidebarMap.has(book.name)) {
     console.warn(
       `Duplicate book name ${book.name}. This will override the previous entry.`
