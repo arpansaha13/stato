@@ -4,10 +4,10 @@ import { Story } from '../types'
 
 import './styles/index.css'
 
-const modules = import.meta.globEager('../dev/*/index.mjs')
+const modules = import.meta.globEager('../dev/*/source.mjs')
 
-const sidebarMap: Map<string, string[]> = new Map()
-const storyMap: Map<string, Story> = new Map()
+const sidebarMap = new Map<string, string[]>()
+const storyMap = new Map<string, Story>()
 
 const app = createApp(App, { sidebarMap, storyMap })
 

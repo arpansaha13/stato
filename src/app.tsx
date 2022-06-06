@@ -3,7 +3,8 @@ import { defineComponent, h, ref, ShallowRef, shallowRef, watch, type PropType }
 import { useHResize } from './composables/useHResize'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
 import type { Story, StoryReturn } from '../types'
-import StoryDisplay from './components/StoryDisplay'
+import StoryRenderer from './components/StoryRenderer'
+// import { useWsSend } from './composables/useWs'
 
 export default defineComponent({
   props: {
@@ -40,6 +41,9 @@ export default defineComponent({
       { min: '6rem', initial: '16rem', max: '32rem' }
     )
     // TODO: use eslint
+    // function reqStory(book: string, story: string) {
+    //   return () => useWsSend('awast:reqStory', {book, story})
+    // }
 
     return () => (
       <div class="container">
@@ -55,7 +59,8 @@ export default defineComponent({
                       {
                         storyNames.map((story: string) =>
                           <li key={ story }>
-                            <button onClick={() => { activeStoryMapKey.value = `${bookName}/${story}` }}>
+                            {/* <button onClick={ reqStory(bookName, story) }> */}
+                            <button onClick={ () => activeStoryMapKey.value = `${bookName}/${story}` }>
                               { story }
                             </button>
                           </li>
@@ -74,8 +79,7 @@ export default defineComponent({
           <div ref="handler" class="resize-handle" />
           <div class="screen">
             screen
-            {/* <StoryDisplay story={ activeStory.value } /> */}
-            {/* { h(createStoryComponent(activeStory.value)) } */}
+            <StoryRenderer story={ activeStory.value } />
           </div>
         </main>
       </div>

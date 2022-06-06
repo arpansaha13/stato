@@ -7,6 +7,8 @@ import vue from '@vitejs/plugin-vue'
 import vuejsx from '@vitejs/plugin-vue-jsx'
 import { AwastConfig } from '../../types'
 
+// const bundleMap = new Map<string, Set<string>>()
+
 export async function config(): Promise<string[]> {
   const root = process.cwd()
 
@@ -23,62 +25,67 @@ export async function config(): Promise<string[]> {
   return resolvedPaths
 }
 
-async function bundleStories() {
+// function pathToStory(book: string, story: string) {
+//   return `../dev/${book}/story-${story}`
+// }
+
+async function bundleSource(entry: string) {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
-  const storyPaths = await config()
-  console.log('bundling stories...\n')
 
-  for (const entry of storyPaths) {
-    const filename = basename(entry)
-    const name = filename.substring(0, filename.indexOf('.stories.ts'))
-    console.log(`\t> ${filename}`)
-    await build({
-      plugins: [vue()],
-      root: resolve(__dirname, '..'),
-      logLevel: 'error',
-      build: {
-        lib: {
-          name,
-          entry,
-          formats: ['es'],
-          fileName: () => 'index.mjs',
-        },
-        outDir: resolve(__dirname, '..', 'dev', name),
-        watch: {},
-        // emptyOutDir: false,
-        rollupOptions: {
-          external: ['vue'],
-        },
+  const filename = basename(entry)
+  const name = filename.substring(0, filename.indexOf('.stories.ts'))
+  console.log(`\t> ${filename}`)
+  await build({
+    plugins: [vue()],
+    root: resolve(__dirname, '..'),
+    logLevel: 'error',
+    build: {
+      lib: {
+        name,
+        entry,
+        formats: ['es'],
+        fileName: () => 'source.mjs',
       },
-      esbuild: {
-        // minify: true,
-        jsxFactory: 'h',
-        jsxFragment: 'Fragment',
+      outDir: resolve(__dirname, '..', 'dev', name),
+      watch: {},
+      // emptyOutDir: false,
+      rollupOptions: {
+        external: ['vue'],
       },
-    })
-  }
+    },
+    esbuild: {
+      // minify: true,
+      jsxFactory: 'h',
+      jsxFragment: 'Fragment',
+    },
+  })
+  // bundleMap.set(name, new Set())
 }
 
-// async function getModulesTable() {
-//   const chunks = import.meta.glob('../dev/*/index.mjs')
-//   const sidebarMap: { [key: string]: string[] } = {}
-
-//   for (const path in chunks) {
-//     await chunks[path]().then(({ default: module }) => {
-//       const storyNames = Object.keys(module.stories)
-//       sidebarMap[module.name] = storyNames
-//     })
+// function serveStory({ book, story }: { book: string; story: string }) {
+//   if (!bundleMap.has(book)) {
+//     console.error(`Could not find book ${book}.`)
+//     return
 //   }
-//   return sidebarMap
+//   if (!(bundleMap.get(book) as Set<string>).has(story)) {
+//     // await bundleStories()
+//     console.error(`Could not find story ${story} in book ${book}.`)
+//     return
+//   }
+//   // const path = pathToStory(book, story)
 // }
 
 export async function dev(args: Argv) {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
 
-  await bundleStories()
-  // const sidebarMap = await getModulesTable()
+  // Bundle .stories.ts files
+  const storyPaths = await config()
+  console.log('bundling stories...\n')
+  for (const entry of storyPaths) {
+    await bundleSource(entry)
+  }
 
   try {
     const server = await createServer({
@@ -89,7 +96,9 @@ export async function dev(args: Argv) {
         {
           name: 'awast',
           configureServer(s) {
-            s.ws.on('connection', () => {})
+            s.ws.on('connection', () => {
+              // s.ws.on('awast:reqStory', serveStory)
+            })
           },
         },
       ],
