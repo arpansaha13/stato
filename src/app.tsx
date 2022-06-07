@@ -1,8 +1,11 @@
 // `h` has to be imported for jsx transform
-import { defineComponent, h, ref, type PropType } from 'vue'
+import { defineComponent, h, ref } from 'vue'
 import { useHResize } from './composables/useHResize'
 import { useWsOn, useWsSend } from './composables/useWs'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
+import { sentenceCase } from 'change-case'
+
+import type { PropType } from 'vue'
 import type { IframeEnv } from '../types'
 
 export default defineComponent({
@@ -42,14 +45,14 @@ export default defineComponent({
               const books = []
               for (const [ bookName, storyNames ] of props.sidebarMap) {
                 books.push(
-                  <Disclosure as="ul" key={ bookName }>
-                    <DisclosureButton> { bookName } </DisclosureButton>
-                    <DisclosurePanel>
+                  <Disclosure as="ul" class="disclosure" key={ bookName }>
+                    <DisclosureButton class="disclosure-button"> { bookName } </DisclosureButton>
+                    <DisclosurePanel class="disclosure-panel">
                       {
                         storyNames.map((story: string) =>
-                          <li key={ story }>
+                          <li class={`disclosure-panel-item ${ activeStoryMapKey.value === bookName + '/' + story ? 'disclosure-panel-item-active' : '' }`} key={ story }>
                             <button onClick={ selectStory(bookName, story) }>
-                              { story }
+                              { sentenceCase(story) }
                             </button>
                           </li>
                         )
@@ -62,15 +65,15 @@ export default defineComponent({
             })()
           }
         </aside>
-        {
-          iframeURL.value !== null &&
-          <main class="workspace">
-            <div ref="handler" class="resize-handle" />
+        <main class="workspace">
+          <div ref="handler" class="resize-handle" />
+          {
+            iframeURL.value !== null &&
             <div class="screen">
               <iframe src={ iframeURL.value } id="awast-iframe" title="Awast iframe for rendering stories in isolation" />
             </div>
-          </main>
-        }
+          }
+        </main>
       </div>
     )
   },

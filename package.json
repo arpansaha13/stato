@@ -40,6 +40,7 @@
     "@types/normalize-path": "^3.0.0",
     "@types/rimraf": "^3.0.2",
     "@vueuse/core": "^8.5.0",
+    "change-case": "^4.1.2",
     "esbuild": "^0.14.42",
     "fast-glob": "^3.2.11",
     "mri": "^1.2.0",
