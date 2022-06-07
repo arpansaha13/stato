@@ -2,12 +2,10 @@ import { Argv } from 'mri'
 import fg from 'fast-glob'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { createServer, build } from 'vite'
+import { createServer, build, type InlineConfig, WebSocketServer } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuejsx from '@vitejs/plugin-vue-jsx'
-import { AwastConfig } from '../../types'
-
-// const bundleMap = new Map<string, Set<string>>()
+import { AwastConfig, IframeEnv } from '../../types'
 
 export async function config(): Promise<string[]> {
   const root = process.cwd()
@@ -24,10 +22,6 @@ export async function config(): Promise<string[]> {
   }
   return resolvedPaths
 }
-
-// function pathToStory(book: string, story: string) {
-//   return `../dev/${book}/story-${story}`
-// }
 
 async function bundleSource(entry: string) {
   const __filename = fileURLToPath(import.meta.url)
@@ -60,21 +54,7 @@ async function bundleSource(entry: string) {
       jsxFragment: 'Fragment',
     },
   })
-  // bundleMap.set(name, new Set())
 }
-
-// function serveStory({ book, story }: { book: string; story: string }) {
-//   if (!bundleMap.has(book)) {
-//     console.error(`Could not find book ${book}.`)
-//     return
-//   }
-//   if (!(bundleMap.get(book) as Set<string>).has(story)) {
-//     // await bundleStories()
-//     console.error(`Could not find story ${story} in book ${book}.`)
-//     return
-//   }
-//   // const path = pathToStory(book, story)
-// }
 
 export async function dev(args: Argv) {
   const __filename = fileURLToPath(import.meta.url)
@@ -87,43 +67,96 @@ export async function dev(args: Argv) {
     await bundleSource(entry)
   }
 
-  try {
-    const server = await createServer({
-      configFile: false,
-      plugins: [
-        vue(),
-        vuejsx(),
-        {
-          name: 'awast',
-          configureServer(s) {
-            s.ws.on('connection', () => {
-              // s.ws.on('awast:reqStory', serveStory)
-            })
-          },
-        },
-      ],
-      mode: 'development',
-      server: {
-        open: args.open ?? false,
-      },
-      root: resolve(__dirname, '..'),
-      build: {
-        rollupOptions: {
-          input: {
-            app: resolve(__dirname, '..', 'index.html'),
-          },
-        },
-      },
-    })
+  const iframeEnv: IframeEnv = {
+    IFRAME_SERVER_HOST: '',
+    IFRAME_SERVER_PORT: -1,
+  }
+  // let mainSocket: WebSocketServer
+  let iframeSocket: WebSocketServer
 
-    if (!server.httpServer) {
+  const serverConfig: InlineConfig = {
+    configFile: false,
+    mode: 'development',
+  }
+  const mainServerConfig: InlineConfig = {
+    ...serverConfig,
+    root: resolve(__dirname, '..', 'main'),
+    cacheDir: 'node_modules/.vite_main',
+    plugins: [
+      vue(),
+      vuejsx(),
+      {
+        name: 'awast-main',
+        configureServer({ ws }) {
+          // mainSocket = ws
+          ws.on('connection', () => {
+            ws.send('awast-main:iframe-env', iframeEnv)
+            ws.on('awast-main:select-story', (activeStoryKey: string) => {
+              iframeSocket.send('awast-iframe:select-story', activeStoryKey)
+            })
+          })
+        },
+      },
+    ],
+    server: {
+      open: args.open ?? false,
+      port: 3000,
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          app: resolve(__dirname, '..', 'main', 'index.html'),
+        },
+      },
+    },
+  }
+  const iframeServerConfig: InlineConfig = {
+    ...serverConfig,
+    root: resolve(__dirname, '..', 'iframe'),
+    cacheDir: 'node_modules/.vite_iframe',
+    plugins: [
+      vue(),
+      vuejsx(),
+      {
+        name: 'awast-iframe',
+        configureServer({ ws }) {
+          iframeSocket = ws
+        },
+      },
+    ],
+    server: {
+      port: 3500,
+    },
+    build: {
+      rollupOptions: {
+        input: {
+          app: resolve(__dirname, '..', 'iframe', 'index.html'),
+        },
+      },
+    },
+  }
+
+  try {
+    const iframeServer = await createServer(iframeServerConfig)
+    if (!iframeServer.httpServer) {
       throw new Error('HTTP server not available')
     }
+    await iframeServer.listen()
 
-    await server.listen()
+    const address = iframeServer.httpServer.address()
+    if (address !== null && typeof address !== 'string') {
+      iframeEnv.IFRAME_SERVER_HOST = address.address
+      iframeEnv.IFRAME_SERVER_PORT = address.port
+    }
 
+    const mainServer = await createServer(mainServerConfig)
+    if (!mainServer.httpServer) {
+      throw new Error('HTTP server not available')
+    }
+    await mainServer.listen()
     console.log('\nvite dev server running at:\n')
-    server.printUrls()
+
+    mainServer.printUrls()
   } catch (e: any) {
     console.error(`error when starting dev server:\n${e.stack}`)
     process.exit(1)

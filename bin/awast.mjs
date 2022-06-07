@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-import('../dist/index.mjs').then((r) => {
+import('../cli/index.mjs').then((r) => {
   r.default()
 })

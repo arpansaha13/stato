@@ -2,7 +2,7 @@ import { build } from 'esbuild'
 
 build({
   entryPoints: ['src/styles/index.css'],
-  outdir: 'dist/assets',
+  outdir: 'dist/main',
   bundle: true,
   minify: true,
 }).catch(() => process.exit(1))

@@ -23,7 +23,7 @@
     "preinstall": "npx only-allow pnpm",
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
-    "build": "pnpm typecheck && unbuild && node esbuild.config.js",
+    "build": "pnpm typecheck && node unbuild.js && node esbuild.config.js",
     "clean": "if exist dist rd dist /s /q",
     "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
     "package": "pnpm prepack && cd dist && pnpm pack"

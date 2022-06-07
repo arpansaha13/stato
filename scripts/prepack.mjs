@@ -4,18 +4,32 @@ import { fileURLToPath } from 'url'
 
 import pkg from '../package.json' assert { type: 'json' }
 
-const document = `
+const mainDocument = `
   <!DOCTYPE html>
   <html lang="en">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>Awast</title>
-      <link rel="stylesheet" href="./assets/index.css">
+      <link rel="stylesheet" href="./index.css">
     </head>
     <body>
       <div id="app"></div>
-      <script type="module" src="./dist/main.mjs"></script>
+      <script type="module" src="./main.mjs"></script>
+    </body>
+  </html>
+`
+const iframeDocument = `
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Awast iframe</title>
+    </head>
+    <body>
+      <div id="iframe"></div>
+      <script type="module" src="./iframe.mjs"></script>
     </body>
   </html>
 `
@@ -54,8 +68,12 @@ async function prepack() {
     Buffer.from(JSON.stringify(pkg, null, 2), 'utf-8')
   )
   await promises.writeFile(
-    resolve(__dirname, '..', 'dist', 'index.html'),
-    Buffer.from(document, 'utf-8')
+    resolve(__dirname, '..', 'dist', 'main', 'index.html'),
+    Buffer.from(mainDocument, 'utf-8')
+  )
+  await promises.writeFile(
+    resolve(__dirname, '..', 'dist', 'iframe', 'index.html'),
+    Buffer.from(iframeDocument, 'utf-8')
   )
 }
 

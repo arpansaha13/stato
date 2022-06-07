@@ -1,10 +1,9 @@
 // `h` has to be imported for jsx transform
-import { defineComponent, h, ref, ShallowRef, shallowRef, watch, type PropType } from 'vue'
+import { defineComponent, h, ref, type PropType } from 'vue'
 import { useHResize } from './composables/useHResize'
+import { useWsOn, useWsSend } from './composables/useWs'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import type { Story, StoryReturn } from '../types'
-import StoryRenderer from './components/StoryRenderer'
-// import { useWsSend } from './composables/useWs'
+import type { IframeEnv } from '../types'
 
 export default defineComponent({
   props: {
@@ -12,38 +11,28 @@ export default defineComponent({
       type: Map as PropType<Map<string, string[]>>,
       required: true,
     },
-    storyMap: {
-      type: Map as PropType<Map<string, Story>>,
-      required: true,
-    },
   },
   setup(props) {
     const activeStoryMapKey = ref('')
-    const activeStory = shallowRef({}) as ShallowRef<StoryReturn>
+    const iframeURL = ref<string | null>(null)
 
-    watch(activeStoryMapKey, () => {
-      const fn = props.storyMap.get(activeStoryMapKey.value)
-      if (typeof fn === 'undefined') {
-        const [bookName, storyName] = activeStoryMapKey.value.split('/')
-        console.warn(`Story ${storyName} of book ${bookName} is undefined.`)
-      }
-      else if (typeof fn === 'function') {
-        activeStory.value = fn()
-      }
-      else {
-        const [bookName, storyName] = activeStoryMapKey.value.split('/')
-        console.warn(`Story ${storyName} of book ${bookName} is not a function.`)
-      }
+    useWsOn('awast-main:iframe-env', (iframeEnv: IframeEnv) => {
+      iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
     })
+
+    function selectStory(book: string, story: string) {
+      return () => {
+        activeStoryMapKey.value = `${book}/${story}`
+        useWsSend('awast-main:select-story', `${book}/${story}`)
+      }
+    }
+
     const style = useHResize(
       'target',
       { ref: 'handler', direction: 'normal' },
       { min: '6rem', initial: '16rem', max: '32rem' }
     )
     // TODO: use eslint
-    // function reqStory(book: string, story: string) {
-    //   return () => useWsSend('awast:reqStory', {book, story})
-    // }
 
     return () => (
       <div class="container">
@@ -59,8 +48,7 @@ export default defineComponent({
                       {
                         storyNames.map((story: string) =>
                           <li key={ story }>
-                            {/* <button onClick={ reqStory(bookName, story) }> */}
-                            <button onClick={ () => activeStoryMapKey.value = `${bookName}/${story}` }>
+                            <button onClick={ selectStory(bookName, story) }>
                               { story }
                             </button>
                           </li>
@@ -74,14 +62,15 @@ export default defineComponent({
             })()
           }
         </aside>
-
-        <main class="workspace">
-          <div ref="handler" class="resize-handle" />
-          <div class="screen">
-            screen
-            <StoryRenderer story={ activeStory.value } />
-          </div>
-        </main>
+        {
+          iframeURL.value !== null &&
+          <main class="workspace">
+            <div ref="handler" class="resize-handle" />
+            <div class="screen">
+              <iframe src={ iframeURL.value } id="awast-iframe" title="Awast iframe for rendering stories in isolation" />
+            </div>
+          </main>
+        }
       </div>
     )
   },

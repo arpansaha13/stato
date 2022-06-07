@@ -1,15 +1,12 @@
 import { createApp } from 'vue'
 import App from './app'
-import { Story } from '../types'
 
 import './styles/index.css'
 
 const modules = import.meta.globEager('../dev/*/source.mjs')
-
 const sidebarMap = new Map<string, string[]>()
-const storyMap = new Map<string, Story>()
 
-const app = createApp(App, { sidebarMap, storyMap })
+const app = createApp(App, { sidebarMap })
 
 for (const path in modules) {
   const { default: book } = modules[path]
@@ -19,10 +16,5 @@ for (const path in modules) {
     )
   }
   sidebarMap.set(book.name, Object.keys(book.stories))
-
-  for (const story of Object.keys(book.stories)) {
-    const key = `${book.name}/${story}`
-    storyMap.set(key, book.stories[story])
-  }
 }
 app.mount('#app')

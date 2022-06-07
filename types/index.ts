@@ -16,3 +16,8 @@ export interface Book {
   name: string
   stories: Story[]
 }
+
+export interface IframeEnv {
+  IFRAME_SERVER_HOST: string
+  IFRAME_SERVER_PORT: number
+}

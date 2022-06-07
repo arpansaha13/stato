@@ -39,3 +39,9 @@
 .resize-handle:active {
   background-color: #3b82f6;
 }
+#awast-iframe {
+  display: block; /* iframes are inline by default */
+  border: none; /* Reset default border */
+  height: 100%;
+  width: 100%;
+}
