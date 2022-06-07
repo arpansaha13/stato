@@ -49,7 +49,7 @@ async function bundleSource(entry: string) {
       },
     },
     esbuild: {
-      // minify: true,
+      minify: true,
       jsxFactory: 'h',
       jsxFragment: 'Fragment',
     },

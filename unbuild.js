@@ -3,6 +3,9 @@ import { build } from 'unbuild'
 await build('.', false, {
   rollup: {
     inlineDependencies: true,
+    esbuild: {
+      minify: true,
+    },
   },
   entries: ['cli/index'],
   outDir: 'dist/cli',
@@ -24,6 +27,7 @@ await build('.', false, {
   rollup: {
     inlineDependencies: true,
     esbuild: {
+      minify: true,
       jsxFactory: 'h',
       jsxFragment: 'Fragment',
     },
@@ -37,6 +41,7 @@ await build('.', false, {
   rollup: {
     inlineDependencies: true,
     esbuild: {
+      minify: true,
       jsxFactory: 'h',
       jsxFragment: 'Fragment',
     },
