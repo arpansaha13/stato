@@ -6,16 +6,19 @@ import vuejsx from '@vitejs/plugin-vue-jsx'
 export default defineConfig({
   plugins: [vue(), vuejsx()],
   build: {
+    target: 'es2020',
     lib: {
-      entry: 'src/main.ts',
-      name: 'main',
+      entry: 'src/app.vue',
+      name: 'app',
       formats: ['es'],
-      fileName: () => 'main.mjs',
+      fileName: () => 'app.mjs',
     },
+    outDir: 'src/vite-dist',
     emptyOutDir: false,
     rollupOptions: {
       external: ['vue'],
     },
+    minify: false,
   },
   esbuild: {
     jsxFactory: 'h',
