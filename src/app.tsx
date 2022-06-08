@@ -1,5 +1,5 @@
-// `h` has to be imported for jsx transform
-import { defineComponent, h, ref } from 'vue'
+// `h` and `Fragment` have to be imported for jsx transform
+import { defineComponent, h, ref, Fragment } from 'vue'
 import { useHResize } from './composables/useHResize'
 import { useWsOn, useWsSend } from './composables/useWs'
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
@@ -35,7 +35,6 @@ export default defineComponent({
       { ref: 'handler', direction: 'normal' },
       { min: '6rem', initial: '16rem', max: '32rem' }
     )
-    // TODO: use eslint
 
     return () => (
       <div class="container">
@@ -46,18 +45,23 @@ export default defineComponent({
               for (const [ bookName, storyNames ] of props.sidebarMap) {
                 books.push(
                   <Disclosure as="ul" class="disclosure" key={ bookName }>
-                    <DisclosureButton class="disclosure-button"> { bookName } </DisclosureButton>
-                    <DisclosurePanel class="disclosure-panel">
-                      {
-                        storyNames.map((story: string) =>
-                          <li class={`disclosure-panel-item ${ activeStoryMapKey.value === bookName + '/' + story ? 'disclosure-panel-item-active' : '' }`} key={ story }>
-                            <button onClick={ selectStory(bookName, story) }>
-                              { sentenceCase(story) }
-                            </button>
-                          </li>
-                        )
-                      }
-                    </DisclosurePanel>
+                    {
+                      (() => <>
+                        { h(DisclosureButton, null, () => h('span', null, bookName)) }
+                        {/* <DisclosureButton class="disclosure-button"> { () => [<>{ bookName }</>] } </DisclosureButton> */}
+                        <DisclosurePanel class="disclosure-panel">
+                          {
+                            () => storyNames.map((story: string) =>
+                              <li class={`disclosure-panel-item ${ activeStoryMapKey.value === bookName + '/' + story ? 'disclosure-panel-item-active' : '' }`} key={ story }>
+                                <button onClick={ selectStory(bookName, story) }>
+                                  { sentenceCase(story) }
+                                </button>
+                              </li>
+                            )
+                          }
+                        </DisclosurePanel>
+                      </>)
+                    }
                   </Disclosure>
                 )
               }

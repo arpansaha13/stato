@@ -5,8 +5,6 @@ import { Story } from '../types'
 const modules = import.meta.globEager('../dev/*/source.mjs')
 const storyMap = new Map<string, Story>()
 
-const app = createApp(App, { storyMap })
-
 for (const path in modules) {
   const { default: book } = modules[path]
 
@@ -15,4 +13,4 @@ for (const path in modules) {
     storyMap.set(key, book.stories[story])
   }
 }
-app.mount('#iframe')
+createApp(App, { storyMap }).mount('#iframe')

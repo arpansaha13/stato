@@ -3,10 +3,11 @@ import App from './app'
 
 import './styles/index.css'
 
+// TODO: use eslint
+// TODO: replace jsx with sfc
+
 const modules = import.meta.globEager('../dev/*/source.mjs')
 const sidebarMap = new Map<string, string[]>()
-
-const app = createApp(App, { sidebarMap })
 
 for (const path in modules) {
   const { default: book } = modules[path]
@@ -17,4 +18,5 @@ for (const path in modules) {
   }
   sidebarMap.set(book.name, Object.keys(book.stories))
 }
+const app = createApp(App, { sidebarMap })
 app.mount('#app')
