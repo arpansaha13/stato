@@ -25,8 +25,11 @@ export default defineComponent({
 
     function selectStory(book: string, story: string) {
       return () => {
-        activeStoryMapKey.value = `${book}/${story}`
-        useWsSend('stato-main:select-story', `${book}/${story}`)
+        const newKey = `${book}/${story}`
+        if (activeStoryMapKey.value !== newKey) {
+          activeStoryMapKey.value = newKey
+          useWsSend('stato-main:select-story', newKey)
+        }
       }
     }
 

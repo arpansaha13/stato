@@ -5,6 +5,7 @@ import './styles/index.css'
 
 // TODO: try vite-plugin-glob - https://github.com/antfu/vite-plugin-glob
 // TODO: use eslint
+// TODO: use `name` universally for referencing books instead of filenames
 // TODO: replace jsx with sfc
 // TODO: try autoprefixer - https://github.com/postcss/autoprefixer
 
