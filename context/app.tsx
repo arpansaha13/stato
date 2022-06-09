@@ -1,13 +1,9 @@
 // `h` has to be imported for jsx transform
-import {
-  defineComponent,
-  shallowRef,
-  h,
-  type PropType,
-  type ShallowRef,
-} from 'vue'
+import { defineComponent, shallowRef, h, ref, Suspense } from 'vue'
 import { useWsOn } from './composables/useWs'
 import StoryRenderer from './components/StoryRenderer'
+
+import type { PropType, ShallowRef } from 'vue'
 import type { Story, StoryReturn } from '../types'
 
 export default defineComponent({
@@ -16,29 +12,46 @@ export default defineComponent({
       type: Map as PropType<Map<string, Story>>,
       required: true,
     },
+    bookStyleMap: {
+      type: Map as PropType<Map<string, () => Promise<{ [key: string]: any }>>>,
+      required: true,
+    },
   },
   setup(props) {
     const activeStory = shallowRef({}) as ShallowRef<StoryReturn>
 
-    useWsOn('awast-iframe:select-story', (activeStoryKey) => {
+    // Dynamically import bundled styles if there are any
+    const importBookStyle = ref<(() => Promise<{ [key: string]: any }>) | null>(null)
+
+    useWsOn('awast-iframe:select-story', (activeStoryKey: string) => {
       const fn = props.storyMap.get(activeStoryKey)
-      if (typeof fn === 'undefined') {
-        const [book, story] = activeStoryKey.split('/')
-        console.warn(`Story ${story} of book ${book} is undefined.`)
+      const [book, story] = activeStoryKey.split('/')
+
+      if (props.bookStyleMap.has(book)) {
+        importBookStyle.value = props.bookStyleMap.get(book) as () => Promise<{ [key: string]: any }>
+      } else {
+        importBookStyle.value = null
       }
-      else if (typeof fn === 'function') {
+
+      if (typeof fn === 'function') {
         activeStory.value = fn()
       }
+      else if (typeof fn === 'undefined') {
+        console.warn(`Story ${story} of book ${book} is undefined.`)
+      }
       else {
-        const [book, story] = activeStoryKey.split('/')
         console.warn(`Story ${story} of book ${book} is not a function.`)
       }
     })
 
     return () => (
       <main>
-        screen
-        <StoryRenderer story={activeStory.value} />
+        <Suspense>
+          {{
+            default: [<StoryRenderer story={activeStory.value} importBookStyle={importBookStyle.value} />],
+            fallback: [<div></div>],
+          }}
+        </Suspense>
       </main>
     )
   },
