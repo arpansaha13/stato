@@ -1,8 +1,8 @@
 // Events sent by main server - received on main client
-type MainClientWsOnEvents = 'awast-main:iframe-env'
+type MainClientWsOnEvents = 'stato-main:iframe-env'
 
 // Events sent by main client - received on main server
-type MainClientWsSendEvents = 'awast-main:select-story'
+type MainClientWsSendEvents = 'stato-main:select-story'
 
 export function useWsOn(e: MainClientWsOnEvents, cb: (data?: any) => void) {
   if (import.meta.hot) {

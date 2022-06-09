@@ -1,5 +1,5 @@
 // Events sent by iframe server - received on iframe client
-type IframeClientWsOnEvents = 'awast-iframe:select-story'
+type IframeClientWsOnEvents = 'stato-iframe:select-story'
 
 // Events sent by iframe client - received on iframe server
 type IframeClientWsSendEvents = ''

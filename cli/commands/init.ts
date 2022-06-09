@@ -12,7 +12,7 @@ const iframeDocument = `<!DOCTYPE html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Awast iframe</title>
+    <title>Stato iframe</title>
   </head>
   <body>
     <div id="iframe"></div>
@@ -20,36 +20,36 @@ const iframeDocument = `<!DOCTYPE html>
   </body>
 </html>
 `
-const iframeScript = `import 'awast/iframe/iframe.mjs'
+const iframeScript = `import 'stato/iframe/iframe.mjs'
 
 // your custom styles here
 `
 
 const root = process.cwd()
-const rootHtmlPath = resolve(root, '.awast', 'index.html')
-const rootScriptPath = resolve(root, '.awast', 'script.mjs')
+const rootHtmlPath = resolve(root, '.stato', 'index.html')
+const rootScriptPath = resolve(root, '.stato', 'script.mjs')
 
 async function initRootHtml() {
   await promises.writeFile(rootHtmlPath, Buffer.from(iframeDocument, 'utf-8'))
-  console.log('created .awast/index.html')
+  console.log('created .stato/index.html')
 }
 async function initRootScript() {
   await promises.writeFile(rootScriptPath, Buffer.from(iframeScript, 'utf-8'))
-  console.log('created .awast/script.mjs')
+  console.log('created .stato/script.mjs')
 }
 
 export async function init() {
-  if (!existsSync('./awast.config.js')) {
+  if (!existsSync('./stato.config.js')) {
     await promises.writeFile(
-      resolve(root, 'awast.config.js'),
+      resolve(root, 'stato.config.js'),
       Buffer.from(config, 'utf-8')
     )
-    console.log('created awast.config.js')
+    console.log('created stato.config.js')
   }
 
-  if (!existsSync('./.awast')) {
-    await promises.mkdir('./.awast')
-    console.log('created .awast')
+  if (!existsSync('./.stato')) {
+    await promises.mkdir('./.stato')
+    console.log('created .stato')
 
     await initRootHtml()
     await initRootScript()
@@ -61,4 +61,15 @@ export async function init() {
       await initRootScript()
     }
   }
+
+  // async function clearDevDir() {
+  //   const __filename = fileURLToPath(import.meta.url)
+  //   const __dirname = dirname(__filename)
+
+  //   if (existsSync(resolve(__dirname, '..', 'dev'))) {
+  //     rimraf(resolve(__dirname, '..', 'dev'), (err) => {
+  //       console.log(err)
+  //     })
+  //   }
+  // }
 }

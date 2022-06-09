@@ -1,20 +1,22 @@
 {
-  "name": "awast",
-  "packageManager": "pnpm@7.0.0",
+  "name": "@stato/vue",
+  "packageManager": "pnpm@7.1.9",
   "private": true,
   "version": "0.0.0",
   "author": "Arpan Saha <https://github.com/lemontreejs>",
-  "description": "A lightweight tool for UI development for vue3.",
+  "description": "A lightweight tool for vue3 for developing components in isolation.",
   "type": "module",
-  "bin": "./bin/awast.mjs",
+  "bin": {
+    "stato": "./bin/stato.mjs"
+  },
   "license": "ISC",
-  "homepage": "https://github.com/lemontreejs/awast",
+  "homepage": "https://github.com/lemontreejs/stato",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lemontreejs/awast"
+    "url": "https://github.com/lemontreejs/stato"
   },
   "bugs": {
-    "url": "https://github.com/lemontreejs/awast/issues"
+    "url": "https://github.com/lemontreejs/stato/issues"
   },
   "files": [
     "dist"
@@ -37,14 +39,12 @@
   "devDependencies": {
     "@headlessui/vue": "^1.6.4",
     "@types/node": "^17.0.36",
-    "@types/normalize-path": "^3.0.0",
     "@types/rimraf": "^3.0.2",
     "@vueuse/core": "^8.5.0",
     "change-case": "^4.1.2",
     "esbuild": "^0.14.42",
     "fast-glob": "^3.2.11",
     "mri": "^1.2.0",
-    "normalize-path": "^3.0.0",
     "rimraf": "^3.0.2",
     "typescript": "^4.7.2",
     "unbuild": "^0.7.4",
@@ -54,7 +54,7 @@
     "vue": "^3.2.36"
   },
   "keywords": [
-    "awast",
+    "stato",
     "vue",
     "components"
   ]

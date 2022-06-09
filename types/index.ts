@@ -1,6 +1,6 @@
 import { DefineComponent } from 'vue'
 
-export interface AwastConfig {
+export interface StatoConfig {
   content: string[]
 }
 

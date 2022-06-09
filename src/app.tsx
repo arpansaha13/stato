@@ -19,14 +19,14 @@ export default defineComponent({
     const activeStoryMapKey = ref('')
     const iframeURL = ref<string | null>(null)
 
-    useWsOn('awast-main:iframe-env', (iframeEnv: IframeEnv) => {
+    useWsOn('stato-main:iframe-env', (iframeEnv: IframeEnv) => {
       iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
     })
 
     function selectStory(book: string, story: string) {
       return () => {
         activeStoryMapKey.value = `${book}/${story}`
-        useWsSend('awast-main:select-story', `${book}/${story}`)
+        useWsSend('stato-main:select-story', `${book}/${story}`)
       }
     }
 
@@ -74,7 +74,7 @@ export default defineComponent({
           {
             iframeURL.value !== null &&
             <div class="screen">
-              <iframe src={ iframeURL.value } id="awast-iframe" title="Awast iframe for rendering stories in isolation" />
+              <iframe src={ iframeURL.value } id="stato-iframe" title="Stato iframe for rendering stories in isolation" />
             </div>
           }
         </main>

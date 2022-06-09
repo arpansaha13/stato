@@ -23,7 +23,7 @@ export default defineComponent({
     // Dynamically import bundled styles if there are any
     const importBookStyle = ref<(() => Promise<{ [key: string]: any }>) | null>(null)
 
-    useWsOn('awast-iframe:select-story', (activeStoryKey: string) => {
+    useWsOn('stato-iframe:select-story', (activeStoryKey: string) => {
       const fn = props.storyMap.get(activeStoryKey)
       const [book, story] = activeStoryKey.split('/')
 

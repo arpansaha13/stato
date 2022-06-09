@@ -12,13 +12,13 @@ import vue from '@vitejs/plugin-vue'
 import vuejsx from '@vitejs/plugin-vue-jsx'
 
 import type { InlineConfig } from 'vite'
-import type { AwastConfig, IframeEnv } from '../../types'
+import type { StatoConfig, IframeEnv } from '../../types'
 
 export async function config(): Promise<string[]> {
   const root = process.cwd()
 
-  const config: Readonly<AwastConfig> = await import(
-    pathToFileURL(resolve(root, 'awast.config.js')).href
+  const config: Readonly<StatoConfig> = await import(
+    pathToFileURL(resolve(root, 'stato.config.js')).href
   ).then((r) => r.default ?? r)
 
   const paths = await fg(config.content)
@@ -93,13 +93,13 @@ export async function dev(args: Argv) {
       vue(),
       vuejsx(),
       {
-        name: 'awast-main',
+        name: 'stato-main',
         configureServer({ ws }) {
           // mainSocket = ws
           ws.on('connection', () => {
-            ws.send('awast-main:iframe-env', iframeEnv)
-            ws.on('awast-main:select-story', (activeStoryKey: string) => {
-              iframeSocket.send('awast-iframe:select-story', activeStoryKey)
+            ws.send('stato-main:iframe-env', iframeEnv)
+            ws.on('stato-main:select-story', (activeStoryKey: string) => {
+              iframeSocket.send('stato-iframe:select-story', activeStoryKey)
             })
           })
         },
@@ -119,13 +119,13 @@ export async function dev(args: Argv) {
   }
   const iframeServerConfig: InlineConfig = {
     ...serverConfig,
-    root: resolve(process.cwd(), '.awast'),
-    cacheDir: '../node_modules/.vite-awast',
+    root: resolve(process.cwd(), '.stato'),
+    cacheDir: '../node_modules/.vite-stato',
     plugins: [
       vue(),
       vuejsx(),
       {
-        name: 'awast-iframe',
+        name: 'stato-iframe',
         configureServer({ ws }) {
           iframeSocket = ws
         },
@@ -143,7 +143,7 @@ export async function dev(args: Argv) {
     build: {
       rollupOptions: {
         input: {
-          app: resolve(process.cwd(), '.awast', 'index.html'),
+          app: resolve(process.cwd(), '.stato', 'index.html'),
         },
       },
     },

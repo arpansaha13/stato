@@ -33,8 +33,8 @@
       <div v-if="iframeURL !== null" class="screen">
         <iframe
           :src="iframeURL"
-          id="awast-iframe"
-          title="Awast iframe for rendering stories in isolation"
+          id="stato-iframe"
+          title="Stato iframe for rendering stories in isolation"
         />
       </div>
     </main>
@@ -61,14 +61,14 @@ defineProps({
 const activeStoryMapKey = ref('')
 const iframeURL = ref<string | null>(null)
 
-useWsOn('awast-main:iframe-env', (iframeEnv: IframeEnv) => {
+useWsOn('stato-main:iframe-env', (iframeEnv: IframeEnv) => {
   iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
 })
 
 function selectStory(book: string, story: string) {
   return () => {
     activeStoryMapKey.value = `${book}/${story}`
-    useWsSend('awast-main:select-story', `${book}/${story}`)
+    useWsSend('stato-main:select-story', `${book}/${story}`)
   }
 }
 

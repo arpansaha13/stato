@@ -49,7 +49,7 @@
 .resize-handle:active {
   background-color: var(--resize-handle-hover-color);
 }
-#awast-iframe {
+#stato-iframe {
   display: block; /* iframes are inline by default */
   border: none; /* Reset default border */
   height: 100%;
