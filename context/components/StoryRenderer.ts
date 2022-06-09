@@ -42,12 +42,8 @@ export default defineComponent({
       dynamic.value = defineComponent({
         components,
         setup() {
-          // vars = Props
-          // Should be accessed in story template as vars.xxx
-          const { vars } = props.story.setup
-            ? props.story.setup()
-            : { vars: null }
-          return compiled
+          const storyProps = props.story.setup ? props.story.setup() : null
+          return compiled.bind(this, storyProps)
         },
       })
     }
