@@ -1,11 +1,18 @@
-import { Argv } from 'mri'
 import fg from 'fast-glob'
+import { Argv } from 'mri'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import { createServer, build, type InlineConfig, WebSocketServer } from 'vite'
+import {
+  createServer,
+  build,
+  WebSocketServer,
+  searchForWorkspaceRoot,
+} from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuejsx from '@vitejs/plugin-vue-jsx'
-import { AwastConfig, IframeEnv } from '../../types'
+
+import type { InlineConfig } from 'vite'
+import type { AwastConfig, IframeEnv } from '../../types'
 
 export async function config(): Promise<string[]> {
   const root = process.cwd()
@@ -100,7 +107,7 @@ export async function dev(args: Argv) {
     ],
     server: {
       open: args.open ?? false,
-      port: 3000,
+      port: 3700,
     },
     build: {
       rollupOptions: {
@@ -112,8 +119,8 @@ export async function dev(args: Argv) {
   }
   const iframeServerConfig: InlineConfig = {
     ...serverConfig,
-    root: resolve(__dirname, '..', 'iframe'),
-    cacheDir: 'node_modules/.vite_iframe',
+    root: resolve(process.cwd(), '.awast'),
+    cacheDir: '../node_modules/.vite-awast',
     plugins: [
       vue(),
       vuejsx(),
@@ -125,12 +132,18 @@ export async function dev(args: Argv) {
       },
     ],
     server: {
-      port: 3500,
+      port: 3800,
+      fs: {
+        allow: [
+          searchForWorkspaceRoot(process.cwd()),
+          resolve(__dirname, '..', 'dev'),
+        ],
+      },
     },
     build: {
       rollupOptions: {
         input: {
-          app: resolve(__dirname, '..', 'iframe', 'index.html'),
+          app: resolve(process.cwd(), '.awast', 'index.html'),
         },
       },
     },

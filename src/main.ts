@@ -3,8 +3,11 @@ import App from './app'
 
 import './styles/index.css'
 
+// TODO: fix props in stories
+// TODO: try vite-plugin-glob - https://github.com/antfu/vite-plugin-glob
 // TODO: use eslint
 // TODO: replace jsx with sfc
+// TODO: try autoprefixer - https://github.com/postcss/autoprefixer
 
 const modules = import.meta.globEager('../dev/*/source.mjs')
 const sidebarMap = new Map<string, string[]>()

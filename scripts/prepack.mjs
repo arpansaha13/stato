@@ -19,20 +19,20 @@ const mainDocument = `
     </body>
   </html>
 `
-const iframeDocument = `
-  <!DOCTYPE html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>Awast iframe</title>
-    </head>
-    <body>
-      <div id="iframe"></div>
-      <script type="module" src="./iframe.mjs"></script>
-    </body>
-  </html>
-`
+// const iframeDocument = `
+//   <!DOCTYPE html>
+//   <html lang="en">
+//     <head>
+//       <meta charset="UTF-8" />
+//       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+//       <title>Awast iframe</title>
+//     </head>
+//     <body>
+//       <div id="iframe"></div>
+//       <script type="module" src="./script.mjs"></script>
+//     </body>
+//   </html>
+// `
 
 async function copyDir(src, dest) {
   await promises.mkdir(dest, { recursive: true })
@@ -71,10 +71,10 @@ async function prepack() {
     resolve(__dirname, '..', 'dist', 'main', 'index.html'),
     Buffer.from(mainDocument, 'utf-8')
   )
-  await promises.writeFile(
-    resolve(__dirname, '..', 'dist', 'iframe', 'index.html'),
-    Buffer.from(iframeDocument, 'utf-8')
-  )
+  // await promises.writeFile(
+  //   resolve(__dirname, '..', 'dist', 'iframe', 'index.html'),
+  //   Buffer.from(iframeDocument, 'utf-8')
+  // )
 }
 
 prepack()
