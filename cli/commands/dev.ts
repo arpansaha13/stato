@@ -98,9 +98,9 @@ export async function dev(args: Argv) {
           // mainSocket = ws
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
-            ws.on('stato-main:select-story', (activeStoryKey: string) => {
-              iframeSocket.send('stato-iframe:select-story', activeStoryKey)
-            })
+          })
+          ws.on('stato-main:select-story', (activeStoryKey: string) => {
+            iframeSocket.send('stato-iframe:select-story', activeStoryKey)
           })
         },
       },
