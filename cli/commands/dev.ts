@@ -1,5 +1,6 @@
 import fg from 'fast-glob'
 import { Argv } from 'mri'
+import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
@@ -9,14 +10,57 @@ import vuejsx from '@vitejs/plugin-vue-jsx'
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { StatoConfig, IframeEnv } from '../../types'
 
-export async function config(): Promise<string[]> {
+/**
+ * @returns a promise for the imported config object from stato.config
+ */
+async function config(): Promise<Readonly<StatoConfig>> {
   const root = process.cwd()
 
-  const config: Readonly<StatoConfig> = await import(
-    pathToFileURL(resolve(root, 'stato.config.js')).href
-  ).then((r) => r.default ?? r)
+  const jsStatoConfig = resolve(root, 'stato.config.js')
+  const tsStatoConfig = resolve(root, 'stato.config.ts')
+  let config: Readonly<StatoConfig>
 
-  const paths = await fg(config.content)
+  async function importConfig(resolvedPath: string): Promise<StatoConfig> {
+    return import(pathToFileURL(resolvedPath).href).then((r) => r.default ?? r)
+  }
+
+  if (existsSync(jsStatoConfig)) {
+    config = await importConfig(jsStatoConfig)
+  } else if (existsSync(tsStatoConfig)) {
+    // compile -> import -> delete
+    const outDir = '.stato'
+    const name = 'stato.config.js'
+    await build({
+      root,
+      logLevel: 'error',
+      build: {
+        lib: {
+          entry: tsStatoConfig,
+          formats: ['es'],
+          fileName: () => name,
+        },
+        outDir,
+        emptyOutDir: false, // Must be false
+        sourcemap: false,
+      },
+    }).catch(() => {
+      process.exit(1)
+    })
+    config = await importConfig(resolve(root, outDir, name))
+    promises.unlink(resolve(root, outDir, name))
+  } else {
+    console.error(`No config file found at ${root}`)
+    process.exit(1)
+  }
+  return config
+}
+/**
+ * @param content the content array of stato.config
+ * @returns a promise for the resolved paths to books
+ */
+async function getBookPaths(content: string[]): Promise<string[]> {
+  const root = process.cwd()
+  const paths = await fg(content)
   const resolvedPaths: string[] = []
 
   for (const path of paths.filter((v) => v.endsWith('.stories.ts'))) {
@@ -25,7 +69,10 @@ export async function config(): Promise<string[]> {
   return resolvedPaths
 }
 
-async function bundleSource(entry: string) {
+/**
+ * @param entry path to book
+ */
+async function bundleBook(entry: string) {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
 
@@ -52,8 +99,6 @@ async function bundleSource(entry: string) {
     },
     esbuild: {
       minify: true,
-      jsxFactory: 'h',
-      jsxFragment: 'Fragment',
     },
   })
 }
@@ -63,10 +108,12 @@ export async function dev(args: Argv) {
   const __dirname = dirname(__filename)
 
   // Bundle .stories.ts files
-  const storyPaths = await config()
+  const statoConfig = await config()
+  const bookPaths = await getBookPaths(statoConfig.content)
   console.log('bundling stories...\n')
-  for (const entry of storyPaths) {
-    await bundleSource(entry)
+
+  for (const entry of bookPaths) {
+    await bundleBook(entry)
   }
 
   const iframeEnv: IframeEnv = {
@@ -160,7 +207,7 @@ export async function dev(args: Argv) {
       throw new Error('HTTP server not available')
     }
     await mainServer.listen()
-    console.log('\nvite dev server running at:\n')
+    console.log('\nvite dev server for stato running at:\n')
 
     mainServer.printUrls()
   } catch (e: any) {

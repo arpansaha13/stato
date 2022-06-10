@@ -4,9 +4,10 @@ import { Book } from '../types'
 
 import './styles/index.css'
 
-// TODO: try vite-plugin-glob - https://github.com/antfu/vite-plugin-glob
+// FIXME: handle hot update of stories
+// FIXME: use `name` property instead of filenames universally for referencing books
+// TODO: add typescript helpers for stato.config.ts and *.stories.ts
 // TODO: use eslint
-// TODO: use `name` universally for referencing books instead of filenames
 // TODO: replace jsx with sfc
 // TODO: try autoprefixer - https://github.com/postcss/autoprefixer
 
