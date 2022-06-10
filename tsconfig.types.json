@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "module": "esnext",
+    "outDir": "dist",
+    "removeComments": false,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "helpers/index.ts",
+    "types/index.ts"
+  ]
+}

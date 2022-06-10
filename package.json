@@ -6,8 +6,17 @@
   "author": "Arpan Saha <https://github.com/lemontreejs>",
   "description": "A lightweight tool for vue3 for developing components in isolation.",
   "type": "module",
+  "module": "./dist/helpers/index.mjs",
+  "types": "./dist/helpers/index.d.ts",
   "bin": {
     "stato": "./bin/stato.mjs"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/helpers/index.mjs",
+      "types": "./dist/helpers/index.d.ts"
+    },
+    "./script": "./dist/iframe/iframe.mjs"
   },
   "license": "ISC",
   "homepage": "https://github.com/lemontreejs/stato",
@@ -19,13 +28,15 @@
     "url": "https://github.com/lemontreejs/stato/issues"
   },
   "files": [
+    "bin",
     "dist"
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
-    "build": "pnpm typecheck && node unbuild.js && node esbuild.js",
+    "build": "pnpm typecheck && node unbuild.js && node esbuild.js && pnpm build:types",
+    "build:types": "tsc -p tsconfig.types.json",
     "clean": "if exist dist rd dist /s /q",
     "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
     "package": "pnpm prepack && cd dist && pnpm pack"

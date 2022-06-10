@@ -2,7 +2,7 @@
   "compilerOptions": {
     "strict": true,
     "allowJs": false,
-    "target": "esnext",
+    "target": "es2020",
     "useDefineForClassFields": true,
     "module": "esnext",
     "moduleResolution": "node",
@@ -24,14 +24,16 @@
     ]
   },
   "include": [
+    "cli/**/*.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
     "context/**/*.ts",
     "context/**/*.tsx",
     "context/**/*.vue",
-    "cli/**/*.ts",
-    "types/*.ts",
+    "helpers/*.ts",
+    "helpers/*.d.ts",
+    "types/*.ts"
   ],
   "exclude": [
     "dist",

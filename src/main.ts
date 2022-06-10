@@ -4,9 +4,9 @@ import { Book } from '../types'
 
 import './styles/index.css'
 
+// TODO: provide commonjs exports
 // FIXME: handle hot update of stories
 // FIXME: use `name` property instead of filenames universally for referencing books
-// TODO: add typescript helpers for stato.config.ts and *.stories.ts
 // TODO: use eslint
 // TODO: replace jsx with sfc
 // TODO: try autoprefixer - https://github.com/postcss/autoprefixer

@@ -6,7 +6,7 @@ export interface StatoConfig {
 
 export interface StoryReturn {
   components?: Record<string, DefineComponent<{}, {}, any>>
-  setup: () => { vars: Record<string, any> }
+  setup: () => Record<string, any>
   template: string
 }
 

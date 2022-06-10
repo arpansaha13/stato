@@ -19,20 +19,6 @@ const mainDocument = `
     </body>
   </html>
 `
-// const iframeDocument = `
-//   <!DOCTYPE html>
-//   <html lang="en">
-//     <head>
-//       <meta charset="UTF-8" />
-//       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-//       <title>Stato iframe</title>
-//     </head>
-//     <body>
-//       <div id="iframe"></div>
-//       <script type="module" src="./script.mjs"></script>
-//     </body>
-//   </html>
-// `
 
 async function copyDir(src, dest) {
   await promises.mkdir(dest, { recursive: true })
@@ -63,6 +49,17 @@ async function prepack() {
   delete pkg.scripts
   delete pkg.devDependencies
 
+  pkg.module = pkg.module.replace('/dist', '')
+  pkg.types = pkg.types.replace('/dist', '')
+
+  function truncatePkgPaths(obj) {
+    for (const key in obj) {
+      if (typeof obj[key] === 'object') truncatePkgPaths(obj[key])
+      else obj[key] = obj[key].replace('/dist', '')
+    }
+  }
+  truncatePkgPaths(pkg.exports)
+
   await promises.writeFile(
     resolve(__dirname, '..', 'dist', 'package.json'),
     Buffer.from(JSON.stringify(pkg, null, 2), 'utf-8')
@@ -71,10 +68,6 @@ async function prepack() {
     resolve(__dirname, '..', 'dist', 'main', 'index.html'),
     Buffer.from(mainDocument, 'utf-8')
   )
-  // await promises.writeFile(
-  //   resolve(__dirname, '..', 'dist', 'iframe', 'index.html'),
-  //   Buffer.from(iframeDocument, 'utf-8')
-  // )
 }
 
 prepack()
