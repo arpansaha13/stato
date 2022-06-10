@@ -13,7 +13,7 @@ export default defineComponent({
       required: true,
     },
     bookStyleMap: {
-      type: Map as PropType<Map<string, () => Promise<{ [key: string]: any }>>>,
+      type: Map as PropType<Map<string, () => Promise<CSSStyleSheet>>>,
       required: true,
     },
   },

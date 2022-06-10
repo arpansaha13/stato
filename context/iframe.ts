@@ -1,9 +1,9 @@
 import { createApp } from 'vue'
 import App from './app'
-import { Story } from '../types'
+import { Book, Story } from '../types'
 
-const modules = import.meta.globEager('../dev/*/source.mjs')
-const moduleStyles = import.meta.glob('../dev/*/style.css')
+const modules = import.meta.globEager<{ default: Book }>('../dev/*/source.mjs')
+const moduleStyles = import.meta.glob<CSSStyleSheet>('../dev/*/style.css')
 
 const storyMap = new Map<string, Story>()
 for (const path in modules) {
@@ -16,7 +16,7 @@ for (const path in modules) {
 }
 
 // Styles of each book
-const bookStyleMap = new Map<string, () => Promise<{ [key: string]: any }>>()
+const bookStyleMap = new Map<string, () => Promise<CSSStyleSheet>>()
 for (const path in moduleStyles) {
   const bookStyle = moduleStyles[path]
 

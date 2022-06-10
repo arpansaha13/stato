@@ -14,7 +14,9 @@ export type Story = () => StoryReturn
 
 export interface Book {
   name: string
-  stories: Story[]
+  stories: {
+    [key: string]: Story
+  }
 }
 
 export interface IframeEnv {

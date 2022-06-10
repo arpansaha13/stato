@@ -2,16 +2,11 @@ import fg from 'fast-glob'
 import { Argv } from 'mri'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
-import {
-  createServer,
-  build,
-  WebSocketServer,
-  searchForWorkspaceRoot,
-} from 'vite'
+import { createServer, build, searchForWorkspaceRoot } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vuejsx from '@vitejs/plugin-vue-jsx'
 
-import type { InlineConfig } from 'vite'
+import type { InlineConfig, WebSocketServer } from 'vite'
 import type { StatoConfig, IframeEnv } from '../../types'
 
 export async function config(): Promise<string[]> {
@@ -78,24 +73,23 @@ export async function dev(args: Argv) {
     IFRAME_SERVER_HOST: '',
     IFRAME_SERVER_PORT: -1,
   }
-  // let mainSocket: WebSocketServer
   let iframeSocket: WebSocketServer
 
-  const serverConfig: InlineConfig = {
+  const commonServerConfig: InlineConfig = {
     configFile: false,
     mode: 'development',
   }
+  const commonPlugins = [vue(), vuejsx()]
+
   const mainServerConfig: InlineConfig = {
-    ...serverConfig,
+    ...commonServerConfig,
     root: resolve(__dirname, '..', 'main'),
     cacheDir: 'node_modules/.vite_main',
     plugins: [
-      vue(),
-      vuejsx(),
+      ...commonPlugins,
       {
         name: 'stato-main',
         configureServer({ ws }) {
-          // mainSocket = ws
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
           })
@@ -118,12 +112,11 @@ export async function dev(args: Argv) {
     },
   }
   const iframeServerConfig: InlineConfig = {
-    ...serverConfig,
+    ...commonServerConfig,
     root: resolve(process.cwd(), '.stato'),
     cacheDir: '../node_modules/.vite-stato',
     plugins: [
-      vue(),
-      vuejsx(),
+      ...commonPlugins,
       {
         name: 'stato-iframe',
         configureServer({ ws }) {

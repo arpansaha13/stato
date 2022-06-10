@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import App from './app'
+import { Book } from '../types'
 
 import './styles/index.css'
 
@@ -9,7 +10,7 @@ import './styles/index.css'
 // TODO: replace jsx with sfc
 // TODO: try autoprefixer - https://github.com/postcss/autoprefixer
 
-const modules = import.meta.globEager('../dev/*/source.mjs')
+const modules = import.meta.globEager<{ default: Book }>('../dev/*/source.mjs')
 const sidebarMap = new Map<string, string[]>()
 
 for (const path in modules) {
