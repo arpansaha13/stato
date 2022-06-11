@@ -16,41 +16,55 @@ import type { StatoConfig, IframeEnv } from '../../types'
 async function config(): Promise<Readonly<StatoConfig>> {
   const root = process.cwd()
 
-  const jsStatoConfig = resolve(root, 'stato.config.js')
-  const tsStatoConfig = resolve(root, 'stato.config.ts')
-  let config: Readonly<StatoConfig>
+  const cjsStatoConfig = resolve(root, 'stato.config.cjs')
+  const resolvedPath = (() => {
+    const jsStatoConfig = resolve(root, 'stato.config.js')
+    const mjsStatoConfig = resolve(root, 'stato.config.mjs')
+    const tsStatoConfig = resolve(root, 'stato.config.ts')
+
+    if (existsSync(cjsStatoConfig)) {
+      return cjsStatoConfig
+    } else if (existsSync(tsStatoConfig)) {
+      return tsStatoConfig
+    } else if (existsSync(jsStatoConfig)) {
+      return jsStatoConfig
+    } else if (existsSync(mjsStatoConfig)) {
+      return mjsStatoConfig
+    }
+  })()
+
+  if (typeof resolvedPath === 'undefined') {
+    console.error(`No config file found at ${root}`)
+    process.exit(1)
+  }
 
   async function importConfig(resolvedPath: string): Promise<StatoConfig> {
     return import(pathToFileURL(resolvedPath).href).then((r) => r.default ?? r)
   }
+  let config: Readonly<StatoConfig>
 
-  if (existsSync(jsStatoConfig)) {
-    config = await importConfig(jsStatoConfig)
-  } else if (existsSync(tsStatoConfig)) {
+  if (resolvedPath === cjsStatoConfig) {
+    config = await importConfig(resolvedPath)
+  } else {
     // compile -> import -> delete
     const outDir = '.stato'
-    const name = 'stato.config.js'
+    const name = 'stato.config.cjs'
     await build({
       root,
       logLevel: 'error',
       build: {
         lib: {
-          entry: tsStatoConfig,
-          formats: ['es'],
+          entry: resolvedPath,
+          formats: ['cjs'],
           fileName: () => name,
         },
         outDir,
         emptyOutDir: false, // Must be false
         sourcemap: false,
       },
-    }).catch(() => {
-      process.exit(1)
     })
     config = await importConfig(resolve(root, outDir, name))
     promises.unlink(resolve(root, outDir, name))
-  } else {
-    console.error(`No config file found at ${root}`)
-    process.exit(1)
   }
   return config
 }
