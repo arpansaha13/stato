@@ -36,7 +36,7 @@ await unbuild('.', false, {
     },
   },
   entries: ['src/main'],
-  outDir: 'dist/main',
+  outDir: 'dist/src',
   dependencies: ['vue'],
 }).catch((err) => {
   console.error(err)
@@ -54,7 +54,7 @@ await unbuild('.', false, {
     },
   },
   entries: ['context/iframe'],
-  outDir: 'dist/iframe',
+  outDir: 'dist/context',
   dependencies: ['vue'],
 }).catch((err) => {
   console.error(err)
@@ -81,10 +81,10 @@ for (const { format, ext } of formats) {
   })
 }
 
-// CSS
+// CSS for main
 await esbuild({
   entryPoints: ['src/styles/index.css'],
-  outdir: 'dist/main',
+  outfile: 'dist/src/style.css',
   bundle: true,
   minify: true,
 }).catch((err) => {

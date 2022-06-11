@@ -18,7 +18,7 @@
       "require": "./dist/helpers/index.cjs",
       "types": "./dist/helpers/index.d.ts"
     },
-    "./script": "./dist/iframe/iframe.mjs"
+    "./context": "./dist/context/iframe.mjs"
   },
   "license": "ISC",
   "homepage": "https://github.com/lemontreejs/stato",

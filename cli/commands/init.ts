@@ -20,7 +20,7 @@ const iframeDocument = `<!DOCTYPE html>
   </body>
 </html>
 `
-const iframeScript = `import 'stato/iframe/iframe.mjs'
+const iframeScript = `import '@stato/vue/context'
 
 // your custom styles here
 `

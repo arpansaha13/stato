@@ -142,8 +142,8 @@ export async function dev(args: Argv) {
 
   const mainServerConfig: InlineConfig = {
     ...commonServerConfig,
-    root: resolve(__dirname, '..', 'main'),
-    cacheDir: 'node_modules/.vite_main',
+    root: resolve(__dirname, '..', 'src'),
+    cacheDir: resolve(process.cwd(), 'node_modules', '.vite-stato', 'src'),
     plugins: [
       vue(),
       {
@@ -165,7 +165,7 @@ export async function dev(args: Argv) {
     build: {
       rollupOptions: {
         input: {
-          app: resolve(__dirname, '..', 'main', 'index.html'),
+          app: resolve(__dirname, '..', 'src', 'index.html'),
         },
       },
     },
@@ -173,7 +173,7 @@ export async function dev(args: Argv) {
   const iframeServerConfig: InlineConfig = {
     ...commonServerConfig,
     root: resolve(process.cwd(), '.stato'),
-    cacheDir: '../node_modules/.vite-stato',
+    cacheDir: '../node_modules/.vite-stato/context',
     plugins: [
       vue(),
       {
