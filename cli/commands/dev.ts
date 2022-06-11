@@ -5,7 +5,6 @@ import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vuejsx from '@vitejs/plugin-vue-jsx'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { StatoConfig, IframeEnv } from '../../types'
@@ -140,14 +139,13 @@ export async function dev(args: Argv) {
     configFile: false,
     mode: 'development',
   }
-  const commonPlugins = [vue(), vuejsx()]
 
   const mainServerConfig: InlineConfig = {
     ...commonServerConfig,
     root: resolve(__dirname, '..', 'main'),
     cacheDir: 'node_modules/.vite_main',
     plugins: [
-      ...commonPlugins,
+      vue(),
       {
         name: 'stato-main',
         configureServer({ ws }) {
@@ -177,7 +175,7 @@ export async function dev(args: Argv) {
     root: resolve(process.cwd(), '.stato'),
     cacheDir: '../node_modules/.vite-stato',
     plugins: [
-      ...commonPlugins,
+      vue(),
       {
         name: 'stato-iframe',
         configureServer({ ws }) {

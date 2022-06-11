@@ -11,7 +11,7 @@ await unbuild('.', false, {
   },
   entries: ['cli/index'],
   outDir: 'dist/cli',
-  dependencies: ['vue', 'vite', '@vitejs/plugin-vue', '@vitejs/plugin-vue-jsx'],
+  dependencies: ['vue', 'vite', '@vitejs/plugin-vue'],
   externals: [
     'node:fs',
     'node:url',
