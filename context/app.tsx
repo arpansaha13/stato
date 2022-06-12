@@ -3,52 +3,40 @@ import { defineComponent, shallowRef, h, ref, Suspense } from 'vue'
 import { useWsOn } from './composables/useWs'
 import StoryRenderer from './components/StoryRenderer'
 
-import type { PropType, ShallowRef } from 'vue'
-import type { Story, StoryReturn } from '../types'
+import type { ShallowRef } from 'vue'
+import type { Story } from '../types'
 
 export default defineComponent({
-  props: {
-    storyMap: {
-      type: Map as PropType<Map<string, Story>>,
-      required: true,
-    },
-    bookStyleMap: {
-      type: Map as PropType<Map<string, () => Promise<CSSStyleSheet>>>,
-      required: true,
-    },
-  },
-  setup(props) {
-    const activeStory = shallowRef({}) as ShallowRef<StoryReturn>
+  setup() {
+    /** All stories of the particular book */
+    const stories = shallowRef(new Map<string, Story>())
+    /** Selected story */
+    const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
+    const stylePathSegment = ref<string | null>(null)
 
-    // Dynamically import bundled styles if there are any
-    const importBookStyle = ref<(() => Promise<{ [key: string]: any }>) | null>(null)
-
-    useWsOn('stato-iframe:select-story', (activeStoryKey: string) => {
-      const fn = props.storyMap.get(activeStoryKey)
-      const [book, story] = activeStoryKey.split('/')
-
-      if (props.bookStyleMap.has(book)) {
-        importBookStyle.value = props.bookStyleMap.get(book) as () => Promise<{ [key: string]: any }>
-      } else {
-        importBookStyle.value = null
+    interface StoryData {
+      bookName: string
+      storyName: string
+      /** Will be the name of book if style.css exists for the particular book, else it will be null. */
+      stylePathSegment: string | null
+    }
+    useWsOn('stato-iframe:select-story', async (storyData: StoryData) => {
+      const { default: book } = await import(`../dev/${storyData.bookName}/source.mjs`)
+      for (const storyName of Object.keys(book.stories)) {
+        stories.value.set(storyName, book.stories[storyName])
       }
-
-      if (typeof fn === 'function') {
-        activeStory.value = fn()
+      activeStory.value = stories.value.get(storyData.storyName)
+      if (typeof activeStory === 'undefined') {
+        console.warn(`Story ${storyData.storyName} of book ${storyData.bookName} is undefined.`)
       }
-      else if (typeof fn === 'undefined') {
-        console.warn(`Story ${story} of book ${book} is undefined.`)
-      }
-      else {
-        console.warn(`Story ${story} of book ${book} is not a function.`)
-      }
+      stylePathSegment.value = storyData.stylePathSegment
     })
 
     return () => (
       <main>
         <Suspense>
           {{
-            default: [<StoryRenderer story={activeStory.value} importBookStyle={importBookStyle.value} />],
+            default: [<StoryRenderer story={activeStory.value} stylePathSegment={stylePathSegment.value} />],
             fallback: [<div></div>],
           }}
         </Suspense>

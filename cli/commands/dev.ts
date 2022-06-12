@@ -4,15 +4,16 @@ import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
+import { glob, globEager } from '../utils/globImport'
 import vue from '@vitejs/plugin-vue'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
-import type { StatoConfig, IframeEnv } from '../../types'
+import type { StatoConfig, IframeEnv, Book, Story } from '../../types'
 
 /**
  * @returns a promise for the imported config object from stato.config
  */
-async function config(): Promise<Readonly<StatoConfig>> {
+async function getConfig(): Promise<Readonly<StatoConfig>> {
   const root = process.cwd()
 
   const cjsStatoConfig = resolve(root, 'stato.config.cjs')
@@ -86,8 +87,7 @@ async function getBookPaths(content: string[]): Promise<string[]> {
  * @param entry path to book
  */
 async function bundleBook(entry: string) {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = dirname(__filename)
+  const __dirname = dirname(fileURLToPath(import.meta.url))
 
   const filename = basename(entry)
   const name = filename.substring(0, filename.indexOf('.stories.ts'))
@@ -104,8 +104,7 @@ async function bundleBook(entry: string) {
         fileName: () => 'source.mjs',
       },
       outDir: resolve(__dirname, '..', 'dev', name),
-      watch: {},
-      // emptyOutDir: false,
+      emptyOutDir: false,
       rollupOptions: {
         external: ['vue'],
       },
@@ -116,24 +115,78 @@ async function bundleBook(entry: string) {
   })
 }
 
+async function getData() {
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+
+  console.log('fetching stories...')
+  const sourceModules = await globEager<{ default: Book }>(
+    './dev/*/source.mjs',
+    { cwd: resolve(__dirname, '..') }
+  )
+  const styleModules = await glob<CSSStyleSheet>('./dev/*/style.css', {
+    cwd: resolve(__dirname, '..'),
+  })
+
+  const sidebarMap = new Map<string, string[]>()
+  const bookStyleMap = new Map<string, () => Promise<CSSStyleSheet>>()
+
+  for (const path in sourceModules) {
+    const { default: book } = sourceModules[path]
+    if (sidebarMap.has(book.name)) {
+      console.warn(
+        `Duplicate book name ${book.name}. This will override the previous entry.`
+      )
+    }
+    sidebarMap.set(book.name, Object.keys(book.stories))
+  }
+  for (const path in styleModules) {
+    const bookStyle = styleModules[path]
+
+    const key = path.split('/')[2]
+    bookStyleMap.set(key, bookStyle)
+  }
+  return { sidebarMap, bookStyleMap }
+}
+
 export async function dev(args: Argv) {
-  const __filename = fileURLToPath(import.meta.url)
-  const __dirname = dirname(__filename)
+  const __dirname = dirname(fileURLToPath(import.meta.url))
 
   // Bundle .stories.ts files
-  const statoConfig = await config()
+  const statoConfig = await getConfig()
   const bookPaths = await getBookPaths(statoConfig.content)
-  console.log('bundling stories...\n')
+  console.log('bundling stories...')
 
   for (const entry of bookPaths) {
     await bundleBook(entry)
   }
+
+  const { sidebarMap, bookStyleMap } = await getData()
 
   const iframeEnv: IframeEnv = {
     IFRAME_SERVER_HOST: '',
     IFRAME_SERVER_PORT: -1,
   }
   let iframeSocket: WebSocketServer
+
+  /** Send the required info for importing stories in client. */
+  function sendStorySegments({
+    bookName,
+    storyName,
+  }: {
+    bookName: string
+    storyName: string
+  }) {
+    /** path segment for dynamic import of styles */
+    const stylePathSegment: string | null = bookStyleMap.has(bookName)
+      ? bookName
+      : null
+
+    iframeSocket.send('stato-iframe:select-story', {
+      bookName,
+      storyName,
+      stylePathSegment,
+    })
+  }
 
   const commonServerConfig: InlineConfig = {
     configFile: false,
@@ -151,10 +204,14 @@ export async function dev(args: Argv) {
         configureServer({ ws }) {
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
+            ws.send('stato-main:sidebar-map', Array.from(sidebarMap))
           })
-          ws.on('stato-main:select-story', (activeStoryKey: string) => {
-            iframeSocket.send('stato-iframe:select-story', activeStoryKey)
-          })
+          ws.on(
+            'stato-main:select-story',
+            (data: { bookName: string; storyName: string }) => {
+              sendStorySegments(data)
+            }
+          )
         },
       },
     ],

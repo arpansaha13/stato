@@ -2,7 +2,7 @@ import * as Vue from 'vue'
 import { compileTemplate } from 'vue/compiler-sfc'
 
 import type { PropType, RenderFunction } from 'vue'
-import type { StoryReturn } from '../../types/index'
+import type { Story } from '../../types/index'
 
 const { defineComponent, h, shallowRef, watch } = Vue
 
@@ -10,11 +10,11 @@ export default defineComponent({
   name: 'StoryRenderer',
   props: {
     story: {
-      type: Object as PropType<StoryReturn>,
+      type: Object as PropType<Story>,
       default: {},
     },
-    importBookStyle: {
-      type: Object as PropType<(() => Promise<{ [key: string]: any }>) | null>,
+    stylePathSegment: {
+      type: String as PropType<string | null>,
       required: true,
     },
   },
@@ -25,8 +25,9 @@ export default defineComponent({
       const components = props.story.components ?? {}
 
       // Dynamically import bundled styles if there are any
-      if (props.importBookStyle !== null) {
-        await props.importBookStyle()
+      // https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
+      if (props.stylePathSegment !== null) {
+        await import(`../dev/${props.stylePathSegment}/style.css`)
       }
 
       const compiled: RenderFunction = new Function(

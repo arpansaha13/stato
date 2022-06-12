@@ -1,5 +1,5 @@
 // Events sent by main server - received on main client
-type MainClientWsOnEvents = 'stato-main:iframe-env'
+type MainClientWsOnEvents = 'stato-main:iframe-env' | 'stato-main:sidebar-map'
 
 // Events sent by main client - received on main server
 type MainClientWsSendEvents = 'stato-main:select-story'
