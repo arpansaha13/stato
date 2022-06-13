@@ -8,7 +8,8 @@ import { glob, globEager } from '../utils/globImport'
 import vue from '@vitejs/plugin-vue'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
-import type { StatoConfig, IframeEnv, Book, Story } from '../../types'
+import type { RollupWatcher } from 'rollup'
+import type { StatoConfig, IframeEnv, Book } from '../../types'
 
 /**
  * @returns a promise for the imported config object from stato.config
@@ -92,7 +93,8 @@ async function bundleBook(entry: string) {
   const filename = basename(entry)
   const name = filename.substring(0, filename.indexOf('.stories.ts'))
   console.log(`\t> ${filename}`)
-  await build({
+
+  const bundleWatcher = (await build({
     plugins: [vue()],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
@@ -103,6 +105,7 @@ async function bundleBook(entry: string) {
         formats: ['es'],
         fileName: () => 'source.mjs',
       },
+      watch: {},
       outDir: resolve(__dirname, '..', 'dev', name),
       emptyOutDir: false,
       rollupOptions: {
@@ -112,13 +115,23 @@ async function bundleBook(entry: string) {
     esbuild: {
       minify: true,
     },
+  })) as RollupWatcher
+
+  // Wait for bundling to end
+  await new Promise((resolve, reject) => {
+    bundleWatcher.on('event', (event) => {
+      if (event.code === 'BUNDLE_END') {
+        resolve('bundled')
+      } else if (event.code === 'ERROR') {
+        reject('error')
+      }
+    })
   })
 }
 
 async function getData() {
   const __dirname = dirname(fileURLToPath(import.meta.url))
 
-  console.log('fetching stories...')
   const sourceModules = await globEager<{ default: Book }>(
     './dev/*/source.mjs',
     { cwd: resolve(__dirname, '..') }

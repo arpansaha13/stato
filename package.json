@@ -38,9 +38,10 @@
     "dev": "vite --open",
     "typecheck": "vue-tsc --noEmit",
     "build": "pnpm typecheck && node scripts/build.mjs && pnpm build:types",
+    "build:dev": "pnpm typecheck && node scripts/build.mjs",
     "build:types": "tsc -p tsconfig.types.json",
     "clean": "if exist dist rd dist /s /q",
-    "prepack": "pnpm clean && pnpm build && node scripts/prepack.mjs",
+    "prepack": "pnpm clean && pnpm build:dev && node scripts/prepack.mjs",
     "package": "pnpm prepack && cd dist && pnpm pack"
   },
   "dependencies": {
@@ -59,6 +60,7 @@
     "fast-glob": "^3.2.11",
     "mri": "^1.2.0",
     "rimraf": "^3.0.2",
+    "rollup": "^2.75.6",
     "typescript": "^4.7.2",
     "unbuild": "^0.7.4",
     "vue-tsc": "^0.34.17"
