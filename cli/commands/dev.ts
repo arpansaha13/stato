@@ -87,14 +87,10 @@ async function getBookPaths(content: string[]): Promise<string[]> {
 /**
  * @param entry path to book
  */
-async function bundleBook(entry: string) {
+async function watchBook(entry: string, name: string) {
   const __dirname = dirname(fileURLToPath(import.meta.url))
 
-  const filename = basename(entry)
-  const name = filename.substring(0, filename.indexOf('.stories.ts'))
-  console.log(`\t> ${filename}`)
-
-  const bundleWatcher = (await build({
+  return (await build({
     plugins: [vue()],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
@@ -116,17 +112,6 @@ async function bundleBook(entry: string) {
       minify: true,
     },
   })) as RollupWatcher
-
-  // Wait for bundling to end
-  await new Promise((resolve, reject) => {
-    bundleWatcher.on('event', (event) => {
-      if (event.code === 'BUNDLE_END') {
-        resolve('bundled')
-      } else if (event.code === 'ERROR') {
-        reject('error')
-      }
-    })
-  })
 }
 
 async function getData() {
@@ -163,6 +148,7 @@ async function getData() {
 
 export async function dev(args: Argv) {
   const __dirname = dirname(fileURLToPath(import.meta.url))
+  let iframeSocket: WebSocketServer | null = null
 
   // Bundle .stories.ts files
   const statoConfig = await getConfig()
@@ -170,16 +156,27 @@ export async function dev(args: Argv) {
   console.log('bundling stories...')
 
   for (const entry of bookPaths) {
-    await bundleBook(entry)
+    const filename = basename(entry)
+    const name = filename.substring(0, filename.indexOf('.stories.ts'))
+
+    console.log(`\t> ${filename}`)
+    const bundleWatcher = await watchBook(entry, name)
+
+    // Wait for bundling to end
+    await new Promise((resolve, reject) => {
+      bundleWatcher.on('event', (event) => {
+        if (event.code === 'BUNDLE_END') {
+          resolve('bundled')
+        } else if (event.code === 'ERROR') {
+          reject('error')
+        }
+      })
+    }).then(() => {
+      if (!!iframeSocket) iframeSocket.send('stato-iframe:update-book', name)
+    })
   }
 
   const { sidebarMap, bookStyleMap } = await getData()
-
-  const iframeEnv: IframeEnv = {
-    IFRAME_SERVER_HOST: '',
-    IFRAME_SERVER_PORT: -1,
-  }
-  let iframeSocket: WebSocketServer
 
   /** Send the required info for importing stories in client. */
   function sendStorySegments({
@@ -194,13 +191,17 @@ export async function dev(args: Argv) {
       ? bookName
       : null
 
-    iframeSocket.send('stato-iframe:select-story', {
+    ;(iframeSocket as WebSocketServer).send('stato-iframe:select-story', {
       bookName,
       storyName,
       stylePathSegment,
     })
   }
 
+  const iframeEnv: IframeEnv = {
+    IFRAME_SERVER_HOST: '',
+    IFRAME_SERVER_PORT: -1,
+  }
   const commonServerConfig: InlineConfig = {
     configFile: false,
     mode: 'development',
@@ -248,6 +249,9 @@ export async function dev(args: Argv) {
       vue(),
       {
         name: 'stato-iframe',
+        handleHotUpdate() {
+          return []
+        },
         configureServer({ ws }) {
           iframeSocket = ws
         },

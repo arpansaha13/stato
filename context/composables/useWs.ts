@@ -1,5 +1,7 @@
 // Events sent by iframe server - received on iframe client
-type IframeClientWsOnEvents = 'stato-iframe:select-story'
+type IframeClientWsOnEvents =
+  | 'stato-iframe:select-story'
+  | 'stato-iframe:update-book'
 
 // Events sent by iframe client - received on iframe server
 type IframeClientWsSendEvents = ''

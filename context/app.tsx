@@ -11,6 +11,8 @@ export default defineComponent({
     /** All stories of the particular book */
     const stories = shallowRef(new Map<string, Story>())
     /** Selected story */
+    const activeBookName = ref<string | null>(null)
+    const activeStoryName = ref<string | null>(null)
     const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
     const stylePathSegment = ref<string | null>(null)
 
@@ -22,14 +24,31 @@ export default defineComponent({
     }
     useWsOn('stato-iframe:select-story', async (storyData: StoryData) => {
       const { default: book } = await import(`../dev/${storyData.bookName}/source.mjs`)
+
+      stories.value.clear()
       for (const storyName of Object.keys(book.stories)) {
         stories.value.set(storyName, book.stories[storyName])
       }
+      activeBookName.value = storyData.bookName
+      activeStoryName.value = storyData.storyName
       activeStory.value = stories.value.get(storyData.storyName)
-      if (typeof activeStory === 'undefined') {
+
+      if (typeof activeStory.value === 'undefined') {
         console.warn(`Story ${storyData.storyName} of book ${storyData.bookName} is undefined.`)
       }
       stylePathSegment.value = storyData.stylePathSegment
+    })
+
+    useWsOn('stato-iframe:update-book', async (bookName: string) => {
+      if (activeBookName.value === bookName) {
+        const { default: book } = await import(`../dev/${bookName}/source.mjs`)
+
+        stories.value.clear()
+        for (const storyName of Object.keys(book.stories)) {
+          stories.value.set(storyName, book.stories[storyName])
+        }
+        activeStory.value = stories.value.get(activeStoryName.value as string)
+      }
     })
 
     return () => (
