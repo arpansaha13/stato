@@ -17,22 +17,16 @@ import type { StatoConfig, IframeEnv, Book } from '../../types'
 async function getConfig(): Promise<Readonly<StatoConfig>> {
   const root = process.cwd()
 
+  let resolvedPath
   const cjsStatoConfig = resolve(root, 'stato.config.cjs')
-  const resolvedPath = (() => {
-    const jsStatoConfig = resolve(root, 'stato.config.js')
-    const mjsStatoConfig = resolve(root, 'stato.config.mjs')
-    const tsStatoConfig = resolve(root, 'stato.config.ts')
+  const jsStatoConfig = resolve(root, 'stato.config.js')
+  const mjsStatoConfig = resolve(root, 'stato.config.mjs')
+  const tsStatoConfig = resolve(root, 'stato.config.ts')
 
-    if (existsSync(cjsStatoConfig)) {
-      return cjsStatoConfig
-    } else if (existsSync(tsStatoConfig)) {
-      return tsStatoConfig
-    } else if (existsSync(jsStatoConfig)) {
-      return jsStatoConfig
-    } else if (existsSync(mjsStatoConfig)) {
-      return mjsStatoConfig
-    }
-  })()
+  if (existsSync(cjsStatoConfig)) resolvedPath = cjsStatoConfig
+  if (existsSync(tsStatoConfig)) resolvedPath = tsStatoConfig
+  if (existsSync(jsStatoConfig)) resolvedPath = jsStatoConfig
+  if (existsSync(mjsStatoConfig)) resolvedPath = mjsStatoConfig
 
   if (typeof resolvedPath === 'undefined') {
     console.error(`No config file found at ${root}`)
@@ -179,13 +173,7 @@ export async function dev(args: Argv) {
   const { sidebarMap, bookStyleMap } = await getData()
 
   /** Send the required info for importing stories in client. */
-  function sendStorySegments({
-    bookName,
-    storyName,
-  }: {
-    bookName: string
-    storyName: string
-  }) {
+  function sendStorySegments(bookName: string, storyName: string) {
     /** path segment for dynamic import of styles */
     const stylePathSegment: string | null = bookStyleMap.has(bookName)
       ? bookName
@@ -223,7 +211,7 @@ export async function dev(args: Argv) {
           ws.on(
             'stato-main:select-story',
             (data: { bookName: string; storyName: string }) => {
-              sendStorySegments(data)
+              sendStorySegments(data.bookName, data.storyName)
             }
           )
         },

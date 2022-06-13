@@ -25,20 +25,11 @@ const iframeScript = `import '@stato/vue/context'
 // your custom styles here
 `
 
-const root = process.cwd()
-const rootHtmlPath = resolve(root, '.stato', 'index.html')
-const rootScriptPath = resolve(root, '.stato', 'script.mjs')
-
-async function initRootHtml() {
-  await promises.writeFile(rootHtmlPath, Buffer.from(iframeDocument, 'utf-8'))
-  console.log('created .stato/index.html')
-}
-async function initRootScript() {
-  await promises.writeFile(rootScriptPath, Buffer.from(iframeScript, 'utf-8'))
-  console.log('created .stato/script.mjs')
-}
-
 export async function init() {
+  const root = process.cwd()
+  const contextHtmlPath = resolve(root, '.stato', 'index.html')
+  const contextScriptPath = resolve(root, '.stato', 'script.mjs')
+
   if (!existsSync('./stato.config.js')) {
     await promises.writeFile(
       resolve(root, 'stato.config.js'),
@@ -50,16 +41,20 @@ export async function init() {
   if (!existsSync('./.stato')) {
     await promises.mkdir('./.stato')
     console.log('created .stato')
-
-    await initRootHtml()
-    await initRootScript()
-  } else {
-    if (!existsSync(rootHtmlPath)) {
-      await initRootHtml()
-    }
-    if (!existsSync(rootScriptPath)) {
-      await initRootScript()
-    }
+  }
+  if (!existsSync(contextHtmlPath)) {
+    await promises.writeFile(
+      contextHtmlPath,
+      Buffer.from(iframeDocument, 'utf-8')
+    )
+    console.log('created .stato/index.html')
+  }
+  if (!existsSync(contextScriptPath)) {
+    await promises.writeFile(
+      contextScriptPath,
+      Buffer.from(iframeScript, 'utf-8')
+    )
+    console.log('created .stato/script.mjs')
   }
 
   // async function clearDevDir() {
