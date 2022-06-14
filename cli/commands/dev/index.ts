@@ -4,7 +4,7 @@ import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
-import { getData, getUpdatedSource, getFileHash } from './data'
+import { getData, getUpdatedFile, getFileHash } from './data'
 import rimraf from 'rimraf'
 import vue from '@vitejs/plugin-vue'
 
@@ -101,6 +101,9 @@ async function watchBook(entry: string, name: string) {
       emptyOutDir: false,
       rollupOptions: {
         external: ['vue'],
+        output: {
+          assetFileNames: '[name]-[hash].[ext]', // For hashed .css files
+        },
       },
     },
     esbuild: {
@@ -149,15 +152,26 @@ export async function dev(args: Argv) {
       bundleWatcher.on('event', async (event) => {
         if (event.code === 'BUNDLE_END') {
           if (iframeSocket !== null) {
-            const paths = await fg(`../dev/${bookName}/source-*.mjs`, {
+            const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
               cwd: __dirname,
             })
-            /** Hash part of the updated file */
-            const sourceHash = getFileHash(getUpdatedSource(paths))
+            const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
+              cwd: __dirname,
+            })
+            /** Hash part of the updated source file */
+            const sourceHash = getFileHash(
+              getUpdatedFile(sourcePaths) as string
+            )
+            /** Hash part of the updated .css file */
+            const styleHash =
+              stylePaths.length === 0
+                ? null
+                : getFileHash(getUpdatedFile(stylePaths) as string)
 
             iframeSocket.send('stato-iframe:update-book', {
               bookName,
               sourceHash,
+              styleHash,
             })
           }
           resolve()
@@ -168,22 +182,18 @@ export async function dev(args: Argv) {
       })
     })
   }
-  const { sidebarMap, fileHashMap, styleMap } = await getData()
+  const { sidebarMap, bookHashMap } = await getData()
 
   /** Send the required info for importing stories in client. */
   function sendStorySegments(bookName: string, storyName: string) {
-    /** path segment for dynamic import of styles */
-    const stylePathSegment: string | null = styleMap.has(bookName)
-      ? bookName
-      : null
-
-    const sourceHash = fileHashMap.get(bookName)
+    const sourceHash = bookHashMap.get(bookName)?.source as string
+    const styleHash = bookHashMap.get(bookName)?.style as string | null
 
     ;(iframeSocket as WebSocketServer).send('stato-iframe:select-story', {
-      sourceHash,
       bookName,
       storyName,
-      stylePathSegment,
+      sourceHash,
+      styleHash,
     })
   }
 

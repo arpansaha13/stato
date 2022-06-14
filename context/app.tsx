@@ -14,7 +14,7 @@ export default defineComponent({
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
     const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
-    const stylePathSegment = ref<string | null>(null)
+    const importStyle = ref<(() => Promise<CSSStyleSheet>) | null>(null)
 
     interface StoryData {
       /** Hash of source file name */
@@ -22,26 +22,27 @@ export default defineComponent({
       bookName: string
       storyName: string
       /** Will be the name of book if style.css exists for the particular book, else it will be null. */
-      stylePathSegment: string | null
+      styleHash: string | null
     }
-    useWsOn('stato-iframe:select-story', async (storyData: StoryData) => {
-      const { default: book } = await import(`../dev/${storyData.bookName}/source-${storyData.sourceHash}.mjs`)
+    useWsOn('stato-iframe:select-story', async ({ bookName, sourceHash, storyName, styleHash }: StoryData) => {
+      const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
       stories.value.clear()
       for (const storyName of Object.keys(book.stories)) {
         stories.value.set(storyName, book.stories[storyName])
       }
-      activeBookName.value = storyData.bookName
-      activeStoryName.value = storyData.storyName
-      activeStory.value = stories.value.get(storyData.storyName)
+      activeBookName.value = bookName
+      activeStoryName.value = storyName
+      activeStory.value = stories.value.get(storyName)
 
       if (typeof activeStory.value === 'undefined') {
-        console.warn(`Story ${storyData.storyName} of book ${storyData.bookName} is undefined.`)
+        console.warn(`Story ${storyName} of book ${bookName} is undefined.`)
+
       }
-      stylePathSegment.value = storyData.stylePathSegment
+      importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
     })
 
-    useWsOn('stato-iframe:update-book', async ({bookName, sourceHash}: {bookName: string; sourceHash: string}) => {
+    useWsOn('stato-iframe:update-book', async ({bookName, sourceHash, styleHash}: {bookName: string; sourceHash: string; styleHash: string | null}) => {
       if (activeBookName.value === bookName) {
       const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
@@ -49,7 +50,9 @@ export default defineComponent({
         for (const storyName of Object.keys(book.stories)) {
           stories.value.set(storyName, book.stories[storyName])
         }
+        importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
         activeStory.value = stories.value.get(activeStoryName.value as string)
+
       }
     })
 
@@ -57,7 +60,7 @@ export default defineComponent({
       <main>
         <Suspense>
           {{
-            default: [<StoryRenderer story={activeStory.value} stylePathSegment={stylePathSegment.value} />],
+            default: [<StoryRenderer story={activeStory.value} importStyle={importStyle.value} />],
             fallback: [<div></div>],
           }}
         </Suspense>

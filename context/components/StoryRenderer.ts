@@ -13,8 +13,8 @@ export default defineComponent({
       type: Object as PropType<Story>,
       default: {},
     },
-    stylePathSegment: {
-      type: String as PropType<string | null>,
+    importStyle: {
+      type: Object as PropType<(() => Promise<CSSStyleSheet>) | null>,
       required: true,
     },
   },
@@ -26,8 +26,8 @@ export default defineComponent({
 
       // Dynamically import bundled styles if there are any
       // https://github.com/rollup/plugins/tree/master/packages/dynamic-import-vars#limitations
-      if (props.stylePathSegment !== null) {
-        await import(`../dev/${props.stylePathSegment}/style.css`)
+      if (props.importStyle !== null) {
+        await props.importStyle()
       }
 
       const compiled: RenderFunction = new Function(

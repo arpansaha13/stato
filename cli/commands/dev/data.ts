@@ -14,7 +14,7 @@ async function getSources() {
 }
 async function getStyles() {
   const __dirname = dirname(fileURLToPath(import.meta.url))
-  return glob<CSSStyleSheet>('./dev/*/style.css', {
+  return glob<CSSStyleSheet>('./dev/*/style-*.css', {
     cwd: resolve(__dirname, '..'),
   })
 }
@@ -41,37 +41,45 @@ function getSidebarMap(sources: Record<string, { default: Book }>) {
 export function getFileHash(path: string) {
   return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
 }
-function getFileHashMap(sources: Record<string, { default: Book }>) {
-  const fileHashMap = new Map<string, string>()
+function getBookHashMap(
+  sources: Record<string, { default: Book }>,
+  styles: Record<string, () => Promise<CSSStyleSheet>>
+) {
+  const fileHashMap = new Map<
+    string,
+    { source: string; style: string | null }
+  >()
 
   for (const path in sources) {
     const { default: book } = sources[path]
 
     /** Hash of source file */
     const hash = getFileHash(path)
-    fileHashMap.set(book.name, hash)
+    fileHashMap.set(book.name, { source: hash, style: null })
+  }
+  for (const path in styles) {
+    const bookName = path.split('/')[2] // Name of folder = book name
+
+    /** Hash of style file */
+    const hash = getFileHash(path)
+    const temp = fileHashMap.get(bookName) as {
+      source: string
+      style: string | null
+    }
+    fileHashMap.set(bookName, { ...temp, style: hash })
   }
   return fileHashMap
-}
-function getStyleMap(styles: Record<string, () => Promise<CSSStyleSheet>>) {
-  const styleMap = new Map<string, () => Promise<CSSStyleSheet>>()
-
-  for (const path in styles) {
-    const bookStyle = styles[path]
-
-    const key = path.split('/')[2]
-    styleMap.set(key, bookStyle)
-  }
-  return styleMap
 }
 
 /**
  * Get latest modified file path out of the given paths.
  * @param paths array of relative file paths
+ * @returns the most recently updated file. If the `paths` array is empty, then null will be returned.
  */
-export function getUpdatedSource(paths: string[]) {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
+export function getUpdatedFile(paths: string[]) {
+  if (paths.length === 0) return null
 
+  const __dirname = dirname(fileURLToPath(import.meta.url))
   return max(paths, (path: string) => {
     // ctime = creation time
     return statSync(resolve(__dirname, path)).ctime
@@ -83,8 +91,7 @@ export async function getData() {
   const styles = await getStyles()
 
   const sidebarMap = getSidebarMap(sources)
-  const fileHashMap = getFileHashMap(sources)
-  const styleMap = getStyleMap(styles)
+  const bookHashMap = getBookHashMap(sources, styles)
 
-  return { sidebarMap, fileHashMap, styleMap }
+  return { sidebarMap, bookHashMap }
 }
