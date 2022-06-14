@@ -5,6 +5,7 @@ import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
 import { getData, getUpdatedSource, getFileHash } from './data'
+import rimraf from 'rimraf'
 import vue from '@vitejs/plugin-vue'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
@@ -108,11 +109,30 @@ async function watchBook(entry: string, name: string) {
   })) as RollupWatcher
 }
 
+async function clearDevDir() {
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  const devDir = resolve(__dirname, '..', 'dev')
+
+  if (existsSync(devDir)) {
+    await new Promise<void>((resolve, reject) => {
+      rimraf(devDir, { disableGlob: true }, (err) => {
+        if (err) {
+          console.error(err)
+          reject()
+        }
+        resolve()
+      })
+    })
+  }
+}
+
 export async function dev(args: Argv) {
   const __dirname = dirname(fileURLToPath(import.meta.url))
   let iframeSocket: WebSocketServer | null = null
 
-  // Bundle .stories.ts files
+  await clearDevDir()
+
+  // Bundle stories
   const statoConfig = await getConfig()
   const bookPaths = await getBookPaths(statoConfig.content)
   console.log('bundling stories...')
@@ -141,7 +161,8 @@ export async function dev(args: Argv) {
             })
           }
           resolve()
-        } else if (event.code === 'ERROR') {
+        }
+        if (event.code === 'ERROR') {
           reject()
         }
       })
