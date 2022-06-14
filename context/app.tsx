@@ -17,13 +17,15 @@ export default defineComponent({
     const stylePathSegment = ref<string | null>(null)
 
     interface StoryData {
+      /** Hash of source file name */
+      sourceHash: string
       bookName: string
       storyName: string
       /** Will be the name of book if style.css exists for the particular book, else it will be null. */
       stylePathSegment: string | null
     }
     useWsOn('stato-iframe:select-story', async (storyData: StoryData) => {
-      const { default: book } = await import(`../dev/${storyData.bookName}/source.mjs`)
+      const { default: book } = await import(`../dev/${storyData.bookName}/source-${storyData.sourceHash}.mjs`)
 
       stories.value.clear()
       for (const storyName of Object.keys(book.stories)) {
@@ -39,9 +41,9 @@ export default defineComponent({
       stylePathSegment.value = storyData.stylePathSegment
     })
 
-    useWsOn('stato-iframe:update-book', async (bookName: string) => {
+    useWsOn('stato-iframe:update-book', async ({bookName, sourceHash}: {bookName: string; sourceHash: string}) => {
       if (activeBookName.value === bookName) {
-        const { default: book } = await import(`../dev/${bookName}/source.mjs`)
+      const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
         stories.value.clear()
         for (const storyName of Object.keys(book.stories)) {
