@@ -1,6 +1,8 @@
-import { dirname, resolve } from 'path'
+import { statSync } from 'fs'
 import { fileURLToPath } from 'url'
+import { dirname, resolve } from 'path'
 import { globEager, glob } from './globImport'
+import { max } from 'underscore'
 
 import type { Book } from '../../../types'
 
@@ -32,6 +34,13 @@ function getSidebarMap(sources: Record<string, { default: Book }>) {
   }
   return sidebarMap
 }
+/**
+ * Get the hash of a bundled file from its path.
+ * @param path path of the file
+ */
+export function getFileHash(path: string) {
+  return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
+}
 function getFileHashMap(sources: Record<string, { default: Book }>) {
   const fileHashMap = new Map<string, string>()
 
@@ -39,12 +48,7 @@ function getFileHashMap(sources: Record<string, { default: Book }>) {
     const { default: book } = sources[path]
 
     /** Hash of source file */
-    const hash = path
-      .split('/')
-      .pop()
-      ?.split('-')
-      .pop()
-      ?.split('.')[0] as string
+    const hash = getFileHash(path)
     fileHashMap.set(book.name, hash)
   }
   return fileHashMap
@@ -59,6 +63,19 @@ function getStyleMap(styles: Record<string, () => Promise<CSSStyleSheet>>) {
     styleMap.set(key, bookStyle)
   }
   return styleMap
+}
+
+/**
+ * Get latest modified file path out of the given paths.
+ * @param paths array of relative file paths
+ */
+export function getUpdatedSource(paths: string[]) {
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+
+  return max(paths, (path: string) => {
+    // ctime = creation time
+    return statSync(resolve(__dirname, path)).ctime
+  }) as string
 }
 
 export async function getData() {

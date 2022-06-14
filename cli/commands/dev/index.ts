@@ -4,12 +4,12 @@ import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
-import { getData } from './data'
+import { getData, getUpdatedSource, getFileHash } from './data'
 import vue from '@vitejs/plugin-vue'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { RollupWatcher } from 'rollup'
-import type { StatoConfig, IframeEnv, Book } from '../../../types'
+import type { StatoConfig, IframeEnv } from '../../../types'
 
 /**
  * @returns a promise for the imported config object from stato.config
@@ -125,30 +125,24 @@ export async function dev(args: Argv) {
     const bundleWatcher = await watchBook(entry, bookName)
 
     // Wait for bundling to end
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
       bundleWatcher.on('event', async (event) => {
         if (event.code === 'BUNDLE_END') {
           if (iframeSocket !== null) {
-            console.log(bookName)
             const paths = await fg(`../dev/${bookName}/source-*.mjs`, {
               cwd: __dirname,
             })
-
-            const sourceHash = paths[1]
-              .split('/')
-              .pop()
-              ?.split('-')
-              .pop()
-              ?.split('.')[0] as string
+            /** Hash part of the updated file */
+            const sourceHash = getFileHash(getUpdatedSource(paths))
 
             iframeSocket.send('stato-iframe:update-book', {
               bookName,
-              sourceHash: '6c8ebe47',
+              sourceHash,
             })
           }
-          resolve('bundled')
+          resolve()
         } else if (event.code === 'ERROR') {
-          reject('error')
+          reject()
         }
       })
     })
