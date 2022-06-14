@@ -52,7 +52,6 @@ export default defineComponent({
         }
         importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
         activeStory.value = stories.value.get(activeStoryName.value as string)
-
       }
     })
 

@@ -1,16 +1,18 @@
 import fg from 'fast-glob'
+import rimraf from 'rimraf'
 import { Argv } from 'mri'
 import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
 import { getData, getUpdatedFile, getFileHash } from './data'
-import rimraf from 'rimraf'
 import vue from '@vitejs/plugin-vue'
 
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { RollupWatcher } from 'rollup'
 import type { StatoConfig, IframeEnv } from '../../../types'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * @returns a promise for the imported config object from stato.config
@@ -83,8 +85,6 @@ async function getBookPaths(content: string[]): Promise<string[]> {
  * @param entry path to book
  */
 async function watchBook(entry: string, name: string) {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
-
   return (await build({
     plugins: [vue()],
     root: resolve(__dirname, '..'),
@@ -113,7 +113,6 @@ async function watchBook(entry: string, name: string) {
 }
 
 async function clearDevDir() {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
   const devDir = resolve(__dirname, '..', 'dev')
 
   if (existsSync(devDir)) {
@@ -128,12 +127,41 @@ async function clearDevDir() {
     })
   }
 }
+/**
+ * Updated hash of source and .css files
+ * @param bookHashMap
+ * @param bookName
+ */
+async function updateBookHashMap(
+  bookHashMap: Map<string, { source: string; style: string | null }>,
+  bookName: string
+) {
+  const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
+    cwd: __dirname,
+  })
+  const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
+    cwd: __dirname,
+  })
+  /** Hash part of the updated source file */
+  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
+  /** Hash part of the updated .css file */
+  const styleHash =
+    stylePaths.length === 0
+      ? null
+      : getFileHash(getUpdatedFile(stylePaths) as string)
+
+  bookHashMap.set(bookName, { source: sourceHash, style: styleHash })
+  return { bookName, sourceHash, styleHash }
+}
 
 export async function dev(args: Argv) {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
-  let iframeSocket: WebSocketServer | null = null
-
   await clearDevDir()
+
+  /** The table of books and stories for the sidebar */
+  let sidebarMap: Map<string, string[]>
+  /** Hashes of source and .css files of books */
+  let bookHashMap: Map<string, { source: string; style: string | null }>
+  let iframeSocket: WebSocketServer | null = null
 
   // Bundle stories
   const statoConfig = await getConfig()
@@ -152,27 +180,11 @@ export async function dev(args: Argv) {
       bundleWatcher.on('event', async (event) => {
         if (event.code === 'BUNDLE_END') {
           if (iframeSocket !== null) {
-            const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
-              cwd: __dirname,
-            })
-            const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
-              cwd: __dirname,
-            })
-            /** Hash part of the updated source file */
-            const sourceHash = getFileHash(
-              getUpdatedFile(sourcePaths) as string
+            const updatedDetails = await updateBookHashMap(
+              bookHashMap,
+              bookName
             )
-            /** Hash part of the updated .css file */
-            const styleHash =
-              stylePaths.length === 0
-                ? null
-                : getFileHash(getUpdatedFile(stylePaths) as string)
-
-            iframeSocket.send('stato-iframe:update-book', {
-              bookName,
-              sourceHash,
-              styleHash,
-            })
+            iframeSocket.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
           }
           resolve()
         }
@@ -182,7 +194,9 @@ export async function dev(args: Argv) {
       })
     })
   }
-  const { sidebarMap, bookHashMap } = await getData()
+  const data = await getData()
+  sidebarMap = data.sidebarMap
+  bookHashMap = data.bookHashMap
 
   /** Send the required info for importing stories in client. */
   function sendStorySegments(bookName: string, storyName: string) {
