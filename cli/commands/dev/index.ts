@@ -84,25 +84,25 @@ async function getBookPaths(content: string[]): Promise<string[]> {
 /**
  * @param entry path to book
  */
-async function watchBook(entry: string, name: string) {
+async function watchBook(entry: string, bookName: string) {
   return (await build({
     plugins: [vue()],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
     build: {
       lib: {
-        name,
         entry,
+        name: bookName,
         formats: ['es'],
         fileName: () => 'source-[hash].mjs',
       },
       watch: {},
-      outDir: resolve(__dirname, '..', 'dev', name),
+      outDir: resolve(__dirname, '..', 'dev', bookName),
       emptyOutDir: false,
       rollupOptions: {
         external: ['vue'],
         output: {
-          assetFileNames: '[name]-[hash].[ext]', // For hashed .css files
+          assetFileNames: 'style-[hash].[ext]', // For hashed .css files
         },
       },
     },
@@ -169,6 +169,7 @@ export async function dev(args: Argv) {
   console.log('bundling stories...')
 
   for (const entry of bookPaths) {
+    // Book name is the name of the file (except .stories.{js,ts})
     const filename = basename(entry)
     const bookName = filename.substring(0, filename.indexOf('.stories.ts'))
 

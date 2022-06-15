@@ -13,14 +13,15 @@ function getSidebarMap(sources: Record<string, Book>) {
   const sidebarMap = new Map<string, string[]>()
 
   for (const path in sources) {
-    // Make sidebar map
+    const bookName = path.split('/')[2] // Name of folder = book name
     const book = sources[path]
-    if (sidebarMap.has(book.name)) {
+
+    if (sidebarMap.has(bookName)) {
       console.warn(
-        `Duplicate book name ${book.name}. This will override the previous entry.`
+        `Duplicate book name ${bookName}. This will override the previous entry.`
       )
     }
-    sidebarMap.set(book.name, Object.keys(book.stories))
+    sidebarMap.set(bookName, Object.keys(book.stories))
   }
   return sidebarMap
 }
@@ -38,11 +39,11 @@ function getBookHashMap(sources: Record<string, Book>, styles: string[]) {
   >()
 
   for (const path in sources) {
-    const book = sources[path]
+    const bookName = path.split('/')[2] // Name of folder = book name
 
     /** Hash of source file */
     const hash = getFileHash(path)
-    bookHashMap.set(book.name, { source: hash, style: null })
+    bookHashMap.set(bookName, { source: hash, style: null })
   }
   for (const path of styles) {
     const bookName = path.split('/')[2] // Name of folder = book name
