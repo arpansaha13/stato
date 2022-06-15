@@ -3,24 +3,25 @@ import { statSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
 import { globEager } from './globImport'
-import { max } from 'underscore'
+import maxBy from 'lodash/maxBy'
 
 import type { Book } from '../../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function getSources() {
-  return globEager<{ default: Book }>('./dev/*/source-*.mjs', {
-    cwd: resolve(__dirname, '..'),
+  return globEager<Book>('./dev/*/source-*.mjs', {
+    fg: { cwd: resolve(__dirname, '..') },
+    importDefault: true,
   })
 }
 
-function getSidebarMap(sources: Record<string, { default: Book }>) {
+function getSidebarMap(sources: Record<string, Book>) {
   const sidebarMap = new Map<string, string[]>()
 
   for (const path in sources) {
     // Make sidebar map
-    const { default: book } = sources[path]
+    const book = sources[path]
     if (sidebarMap.has(book.name)) {
       console.warn(
         `Duplicate book name ${book.name}. This will override the previous entry.`
@@ -37,17 +38,14 @@ function getSidebarMap(sources: Record<string, { default: Book }>) {
 export function getFileHash(path: string) {
   return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
 }
-function getBookHashMap(
-  sources: Record<string, { default: Book }>,
-  styles: string[]
-) {
+function getBookHashMap(sources: Record<string, Book>, styles: string[]) {
   const bookHashMap = new Map<
     string,
     { source: string; style: string | null }
   >()
 
   for (const path in sources) {
-    const { default: book } = sources[path]
+    const book = sources[path]
 
     /** Hash of source file */
     const hash = getFileHash(path)
@@ -75,7 +73,7 @@ function getBookHashMap(
 export function getUpdatedFile(paths: string[]) {
   if (paths.length === 0) return null
 
-  return max(paths, (path: string) => {
+  return maxBy(paths, (path: string) => {
     // ctime = creation time
     return statSync(resolve(__dirname, path)).ctime
   }) as string
