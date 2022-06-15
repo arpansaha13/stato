@@ -9,13 +9,6 @@ import type { Book } from '../../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-async function getSources() {
-  return globEager<Book>('./dev/*/source-*.mjs', {
-    fg: { cwd: resolve(__dirname, '..') },
-    importDefault: true,
-  })
-}
-
 function getSidebarMap(sources: Record<string, Book>) {
   const sidebarMap = new Map<string, string[]>()
 
@@ -80,7 +73,11 @@ export function getUpdatedFile(paths: string[]) {
 }
 
 export async function getData() {
-  const sources = await getSources()
+  const sources = await globEager<Book>('./dev/*/source-*.mjs', {
+    fg: { cwd: resolve(__dirname, '..') },
+    importDefault: true,
+  })
+
   const styles = await fg('./dev/*/style-*.css', {
     cwd: resolve(__dirname, '..'),
   })

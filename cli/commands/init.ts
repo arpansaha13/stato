@@ -1,9 +1,7 @@
 import { resolve } from 'path'
 import { existsSync, promises } from 'fs'
-// import rimraf from 'rimraf'
 
 const config = `module.exports = {
-  // Path or glob patterns to stories
   content: [],
 }
 `
@@ -56,15 +54,4 @@ export async function init() {
     )
     console.log('created .stato/script.mjs')
   }
-
-  // async function clearDevDir() {
-  //   const __filename = fileURLToPath(import.meta.url)
-  //   const __dirname = dirname(__filename)
-
-  //   if (existsSync(resolve(__dirname, '..', 'dev'))) {
-  //     rimraf(resolve(__dirname, '..', 'dev'), (err) => {
-  //       console.log(err)
-  //     })
-  //   }
-  // }
 }

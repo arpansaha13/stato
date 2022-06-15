@@ -8,8 +8,6 @@ import type { Story } from '../types'
 
 export default defineComponent({
   setup() {
-    /** All stories of the particular book */
-    const stories = shallowRef(new Map<string, Story>())
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
     /** Selected story */
@@ -27,17 +25,12 @@ export default defineComponent({
     useWsOn('stato-iframe:select-story', async ({ bookName, sourceHash, storyName, styleHash }: StoryData) => {
       const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
-      stories.value.clear()
-      for (const storyName of Object.keys(book.stories)) {
-        stories.value.set(storyName, book.stories[storyName])
-      }
       activeBookName.value = bookName
       activeStoryName.value = storyName
-      activeStory.value = stories.value.get(storyName)
+      activeStory.value = book.stories[storyName]
 
       if (typeof activeStory.value === 'undefined') {
         console.warn(`Story ${storyName} of book ${bookName} is undefined.`)
-
       }
       importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
     })
@@ -46,12 +39,8 @@ export default defineComponent({
       if (activeBookName.value === bookName) {
         const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
-        stories.value.clear()
-        for (const storyName of Object.keys(book.stories)) {
-          stories.value.set(storyName, book.stories[storyName])
-        }
         importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
-        activeStory.value = stories.value.get(activeStoryName.value as string)
+        activeStory.value = book.stories[activeStoryName.value as string]
       }
     })
 
