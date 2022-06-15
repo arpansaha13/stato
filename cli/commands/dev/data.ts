@@ -1,20 +1,16 @@
+import fg from 'fast-glob'
 import { statSync } from 'fs'
 import { fileURLToPath } from 'url'
 import { dirname, resolve } from 'path'
-import { globEager, glob } from './globImport'
+import { globEager } from './globImport'
 import { max } from 'underscore'
 
 import type { Book } from '../../../types'
 
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 async function getSources() {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
   return globEager<{ default: Book }>('./dev/*/source-*.mjs', {
-    cwd: resolve(__dirname, '..'),
-  })
-}
-async function getStyles() {
-  const __dirname = dirname(fileURLToPath(import.meta.url))
-  return glob<CSSStyleSheet>('./dev/*/style-*.css', {
     cwd: resolve(__dirname, '..'),
   })
 }
@@ -43,9 +39,9 @@ export function getFileHash(path: string) {
 }
 function getBookHashMap(
   sources: Record<string, { default: Book }>,
-  styles: Record<string, () => Promise<CSSStyleSheet>>
+  styles: string[]
 ) {
-  const fileHashMap = new Map<
+  const bookHashMap = new Map<
     string,
     { source: string; style: string | null }
   >()
@@ -55,20 +51,20 @@ function getBookHashMap(
 
     /** Hash of source file */
     const hash = getFileHash(path)
-    fileHashMap.set(book.name, { source: hash, style: null })
+    bookHashMap.set(book.name, { source: hash, style: null })
   }
-  for (const path in styles) {
+  for (const path of styles) {
     const bookName = path.split('/')[2] // Name of folder = book name
 
     /** Hash of style file */
     const hash = getFileHash(path)
-    const temp = fileHashMap.get(bookName) as {
+    const temp = bookHashMap.get(bookName) as {
       source: string
       style: string | null
     }
-    fileHashMap.set(bookName, { ...temp, style: hash })
+    bookHashMap.set(bookName, { ...temp, style: hash })
   }
-  return fileHashMap
+  return bookHashMap
 }
 
 /**
@@ -79,7 +75,6 @@ function getBookHashMap(
 export function getUpdatedFile(paths: string[]) {
   if (paths.length === 0) return null
 
-  const __dirname = dirname(fileURLToPath(import.meta.url))
   return max(paths, (path: string) => {
     // ctime = creation time
     return statSync(resolve(__dirname, path)).ctime
@@ -88,7 +83,9 @@ export function getUpdatedFile(paths: string[]) {
 
 export async function getData() {
   const sources = await getSources()
-  const styles = await getStyles()
+  const styles = await fg('./dev/*/style-*.css', {
+    cwd: resolve(__dirname, '..'),
+  })
 
   const sidebarMap = getSidebarMap(sources)
   const bookHashMap = getBookHashMap(sources, styles)

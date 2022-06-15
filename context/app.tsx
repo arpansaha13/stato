@@ -10,18 +10,18 @@ export default defineComponent({
   setup() {
     /** All stories of the particular book */
     const stories = shallowRef(new Map<string, Story>())
-    /** Selected story */
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
+    /** Selected story */
     const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
     const importStyle = ref<(() => Promise<CSSStyleSheet>) | null>(null)
 
     interface StoryData {
-      /** Hash of source file name */
-      sourceHash: string
       bookName: string
       storyName: string
-      /** Will be the name of book if style.css exists for the particular book, else it will be null. */
+      /** Hash of source file name */
+      sourceHash: string
+      /** Will be the `name` of book if style.css exists for the particular book, else it will be `null`. */
       styleHash: string | null
     }
     useWsOn('stato-iframe:select-story', async ({ bookName, sourceHash, storyName, styleHash }: StoryData) => {
@@ -44,7 +44,7 @@ export default defineComponent({
 
     useWsOn('stato-iframe:update-book', async ({bookName, sourceHash, styleHash}: {bookName: string; sourceHash: string; styleHash: string | null}) => {
       if (activeBookName.value === bookName) {
-      const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
+        const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
 
         stories.value.clear()
         for (const storyName of Object.keys(book.stories)) {
