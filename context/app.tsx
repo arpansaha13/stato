@@ -10,7 +10,6 @@ export default defineComponent({
   setup() {
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
-    /** Selected story */
     const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
     const importStyle = ref<(() => Promise<CSSStyleSheet>) | null>(null)
 
@@ -19,7 +18,7 @@ export default defineComponent({
       storyName: string
       /** Hash of source file name */
       sourceHash: string
-      /** Will be the `name` of book if style.css exists for the particular book, else it will be `null`. */
+      /** Will be the hash of the style file if style.css exists for the particular book, else it will be `null`. */
       styleHash: string | null
     }
     useWsOn('stato-iframe:select-story', async ({ bookName, sourceHash, storyName, styleHash }: StoryData) => {
@@ -32,7 +31,7 @@ export default defineComponent({
       if (typeof activeStory.value === 'undefined') {
         console.warn(`Story ${storyName} of book ${bookName} is undefined.`)
       }
-      importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
+      importStyle.value = styleHash === null ? null : (() => import(`../dev/${bookName}/style-${styleHash}.css`))
     })
 
     useWsOn('stato-iframe:update-book', async ({bookName, sourceHash, styleHash}: {bookName: string; sourceHash: string; styleHash: string | null}) => {

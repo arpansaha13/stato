@@ -268,9 +268,6 @@ export async function dev(args: Argv) {
         },
         configureServer({ ws }) {
           iframeSocket = ws
-          ws.on('connection', () => {
-            ws.send('test-event', 'lala')
-          })
         },
       },
     ],
@@ -282,6 +279,9 @@ export async function dev(args: Argv) {
           resolve(__dirname, '..', 'dev'),
         ],
       },
+    },
+    optimizeDeps: {
+      exclude: ['@stato/vue/context'], // Imported in .stato/script.mjs - should not be pre-bundled
     },
     build: {
       rollupOptions: {
