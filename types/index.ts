@@ -21,7 +21,6 @@ export interface Story {
   template: string
 }
 export interface Book {
-  name: string
   stories: {
     [key: string]: Story
   }
