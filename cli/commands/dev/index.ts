@@ -1,14 +1,16 @@
-import fg from 'fast-glob'
-import rimraf from 'rimraf'
-import { Argv } from 'mri'
-import { ref } from '@vue/reactivity'
 import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
+
+import fg from 'fast-glob'
+import rimraf from 'rimraf'
+import { ref } from '@vue/reactivity'
 import { createServer, build, searchForWorkspaceRoot } from 'vite'
-import { getData, getUpdatedFile, getFileHash } from './data'
 import vue from '@vitejs/plugin-vue'
 
+import { getData, updateBookHashMap } from './data'
+
+import type { Argv } from 'mri'
 import type { Ref } from '@vue/reactivity'
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { RollupWatcher } from 'rollup'
@@ -84,33 +86,6 @@ async function getBookPaths(content: string[]): Promise<string[]> {
   return resolvedPaths
 }
 
-/**
- * Updates hash of source and .css files of the given book in the bookHashMap and returns the updated hashes
- * @param bookHashMap
- * @param bookName
- * @returns the updated hashes along with bookname
- */
-async function updateBookHashMap(
-  bookHashMap: Ref<BookHashMap>,
-  bookName: string
-) {
-  const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
-    cwd: __dirname,
-  })
-  const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
-    cwd: __dirname,
-  })
-  /** Hash part of the updated source file */
-  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
-  /** Hash part of the updated .css file */
-  const styleHash =
-    stylePaths.length === 0
-      ? null
-      : getFileHash(getUpdatedFile(stylePaths) as string)
-
-  bookHashMap.value.set(bookName, { source: sourceHash, style: styleHash })
-  return { bookName, sourceHash, styleHash }
-}
 /**
  * Watch and bundle a book
  * @param entry path to book
@@ -214,9 +189,10 @@ export async function dev(args: Argv) {
   let bookHashMap = ref<BookHashMap | null>(null)
   let iframeSocket = ref<WebSocketServer | null>(null)
 
-  // Bundle stories
   const statoConfig = await getConfig()
   const bookPaths = await getBookPaths(statoConfig.content)
+
+  // Bundle stories
   console.log('bundling stories...')
 
   for (const entry of bookPaths) {
@@ -227,6 +203,7 @@ export async function dev(args: Argv) {
     console.log(`\t> ${filename}`)
     await watchBook(entry, bookName, iframeSocket, bookHashMap)
   }
+
   const data = await getData()
   sidebarMap = data.sidebarMap
   bookHashMap.value = data.bookHashMap
