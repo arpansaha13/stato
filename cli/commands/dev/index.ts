@@ -1,6 +1,7 @@
 import fg from 'fast-glob'
 import rimraf from 'rimraf'
 import { Argv } from 'mri'
+import { ref } from '@vue/reactivity'
 import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
@@ -8,8 +9,10 @@ import { createServer, build, searchForWorkspaceRoot } from 'vite'
 import { getData, getUpdatedFile, getFileHash } from './data'
 import vue from '@vitejs/plugin-vue'
 
+import type { Ref } from '@vue/reactivity'
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { RollupWatcher } from 'rollup'
+import type { BookHashMap } from './data'
 import type { StatoConfig, IframeEnv } from '../../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -82,10 +85,46 @@ async function getBookPaths(content: string[]): Promise<string[]> {
 }
 
 /**
- * @param entry path to book
+ * Updates hash of source and .css files of the given book in the bookHashMap and returns the updated hashes
+ * @param bookHashMap
+ * @param bookName
+ * @returns the updated hashes along with bookname
  */
-async function watchBook(entry: string, bookName: string) {
-  return (await build({
+async function updateBookHashMap(
+  bookHashMap: Ref<BookHashMap>,
+  bookName: string
+) {
+  const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
+    cwd: __dirname,
+  })
+  const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
+    cwd: __dirname,
+  })
+  /** Hash part of the updated source file */
+  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
+  /** Hash part of the updated .css file */
+  const styleHash =
+    stylePaths.length === 0
+      ? null
+      : getFileHash(getUpdatedFile(stylePaths) as string)
+
+  bookHashMap.value.set(bookName, { source: sourceHash, style: styleHash })
+  return { bookName, sourceHash, styleHash }
+}
+/**
+ * Watch and bundle a book
+ * @param entry path to book
+ * @param bookName name of book
+ * @param iframeSocket
+ * @param bookHashMap
+ */
+async function watchBook(
+  entry: string,
+  bookName: string,
+  iframeSocket: Ref<WebSocketServer | null>,
+  bookHashMap: Ref<BookHashMap | null>
+) {
+  const bundleWatcher = (await build({
     plugins: [vue()],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
@@ -110,6 +149,42 @@ async function watchBook(entry: string, bookName: string) {
       minify: true,
     },
   })) as RollupWatcher
+
+  // Wait for bundling to end
+  await new Promise<void>((resolve, reject) => {
+    bundleWatcher.on('event', async (event) => {
+      if (event.code === 'BUNDLE_END') {
+        if (iframeSocket.value !== null) {
+          const updatedDetails = await updateBookHashMap(
+            bookHashMap as Ref<BookHashMap>,
+            bookName
+          )
+          iframeSocket.value.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
+        }
+        resolve()
+      }
+      if (event.code === 'ERROR') {
+        reject()
+      }
+    })
+  })
+}
+/** Send the required info for importing stories in client. */
+function sendStorySegments(
+  bookName: string,
+  storyName: string,
+  iframeSocket: Ref<WebSocketServer>,
+  bookHashMap: Ref<BookHashMap>
+) {
+  const sourceHash = bookHashMap.value.get(bookName)?.source as string
+  const styleHash = bookHashMap.value.get(bookName)?.style as string | null
+
+  iframeSocket.value.send('stato-iframe:select-story', {
+    bookName,
+    storyName,
+    sourceHash,
+    styleHash,
+  })
 }
 
 async function clearDevDir() {
@@ -127,41 +202,17 @@ async function clearDevDir() {
     })
   }
 }
-/**
- * Updated hash of source and .css files
- * @param bookHashMap
- * @param bookName
- */
-async function updateBookHashMap(
-  bookHashMap: Map<string, { source: string; style: string | null }>,
-  bookName: string
-) {
-  const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
-    cwd: __dirname,
-  })
-  const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
-    cwd: __dirname,
-  })
-  /** Hash part of the updated source file */
-  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
-  /** Hash part of the updated .css file */
-  const styleHash =
-    stylePaths.length === 0
-      ? null
-      : getFileHash(getUpdatedFile(stylePaths) as string)
-
-  bookHashMap.set(bookName, { source: sourceHash, style: styleHash })
-  return { bookName, sourceHash, styleHash }
-}
 
 export async function dev(args: Argv) {
   await clearDevDir()
 
   /** The table of books and stories for the sidebar */
   let sidebarMap: Map<string, string[]>
+
+  // Using ref so that it can be sent to watchBook() and sendStorySegments() as parameter and gets updated in the function scope
   /** Hashes of source and .css files of books */
-  let bookHashMap: Map<string, { source: string; style: string | null }>
-  let iframeSocket: WebSocketServer | null = null
+  let bookHashMap = ref<BookHashMap | null>(null)
+  let iframeSocket = ref<WebSocketServer | null>(null)
 
   // Bundle stories
   const statoConfig = await getConfig()
@@ -174,43 +225,11 @@ export async function dev(args: Argv) {
     const bookName = filename.substring(0, filename.indexOf('.stories.ts'))
 
     console.log(`\t> ${filename}`)
-    const bundleWatcher = await watchBook(entry, bookName)
-
-    // Wait for bundling to end
-    await new Promise<void>((resolve, reject) => {
-      bundleWatcher.on('event', async (event) => {
-        if (event.code === 'BUNDLE_END') {
-          if (iframeSocket !== null) {
-            const updatedDetails = await updateBookHashMap(
-              bookHashMap,
-              bookName
-            )
-            iframeSocket.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
-          }
-          resolve()
-        }
-        if (event.code === 'ERROR') {
-          reject()
-        }
-      })
-    })
+    await watchBook(entry, bookName, iframeSocket, bookHashMap)
   }
   const data = await getData()
   sidebarMap = data.sidebarMap
-  bookHashMap = data.bookHashMap
-
-  /** Send the required info for importing stories in client. */
-  function sendStorySegments(bookName: string, storyName: string) {
-    const sourceHash = bookHashMap.get(bookName)?.source as string
-    const styleHash = bookHashMap.get(bookName)?.style as string | null
-
-    ;(iframeSocket as WebSocketServer).send('stato-iframe:select-story', {
-      bookName,
-      storyName,
-      sourceHash,
-      styleHash,
-    })
-  }
+  bookHashMap.value = data.bookHashMap
 
   const iframeEnv: IframeEnv = {
     IFRAME_SERVER_HOST: '',
@@ -237,10 +256,15 @@ export async function dev(args: Argv) {
           ws.on(
             'stato-main:select-story',
             (data: { bookName: string; storyName: string }) => {
-              sendStorySegments(data.bookName, data.storyName)
+              sendStorySegments(
+                data.bookName,
+                data.storyName,
+                iframeSocket as Ref<WebSocketServer>,
+                bookHashMap as Ref<BookHashMap>
+              )
             }
           )
-          iframeSocket?.on('connection', () => {
+          iframeSocket.value?.on('connection', () => {
             ws.send('stato-main:iframe-connected')
           })
         },
@@ -270,7 +294,7 @@ export async function dev(args: Argv) {
           return []
         },
         configureServer({ ws }) {
-          iframeSocket = ws
+          iframeSocket.value = ws
         },
       },
     ],

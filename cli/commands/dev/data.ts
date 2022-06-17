@@ -9,6 +9,8 @@ import type { Book } from '../../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
+export type BookHashMap = Map<string, { source: string; style: string | null }>
+
 function getSidebarMap(sources: Record<string, Book>) {
   const sidebarMap = new Map<string, string[]>()
 
@@ -33,10 +35,7 @@ export function getFileHash(path: string) {
   return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
 }
 function getBookHashMap(sources: Record<string, Book>, styles: string[]) {
-  const bookHashMap = new Map<
-    string,
-    { source: string; style: string | null }
-  >()
+  const bookHashMap: BookHashMap = new Map()
 
   for (const path in sources) {
     const bookName = path.split('/')[2] // Name of folder = book name

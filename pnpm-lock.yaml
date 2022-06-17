@@ -7,6 +7,7 @@ specifiers:
   '@types/rimraf': ^3.0.2
   '@vitejs/plugin-vue': ^2.3.3
   '@vitejs/plugin-vue-jsx': ^1.3.10
+  '@vue/reactivity': ^3.2.37
   '@vueuse/core': ^8.5.0
   change-case: ^4.1.2
   esbuild: ^0.14.42
@@ -23,6 +24,7 @@ specifiers:
 
 dependencies:
   '@vitejs/plugin-vue': 2.3.3_vite@2.9.9+vue@3.2.36
+  '@vue/reactivity': 3.2.37
   vite: 2.9.9
   vue: 3.2.36
 
@@ -573,7 +575,7 @@ packages:
       '@volar/source-map': 0.34.17
       '@vue/compiler-core': 3.2.36
       '@vue/compiler-dom': 3.2.36
-      '@vue/shared': 3.2.36
+      '@vue/shared': 3.2.37
     dev: true
 
   /@volar/vue-typescript/0.34.17:
@@ -583,7 +585,7 @@ packages:
       '@volar/source-map': 0.34.17
       '@volar/vue-code-gen': 0.34.17
       '@vue/compiler-sfc': 3.2.36
-      '@vue/reactivity': 3.2.36
+      '@vue/reactivity': 3.2.37
     dev: true
 
   /@vue/babel-helper-vue-transform-on/1.0.2:
@@ -655,6 +657,11 @@ packages:
     dependencies:
       '@vue/shared': 3.2.36
 
+  /@vue/reactivity/3.2.37:
+    resolution: {integrity: sha512-/7WRafBOshOc6m3F7plwzPeCu/RCVv9uMpOwa/5PiY1Zz+WLVRWiy0MYKwmg19KBdGtFWsmZ4cD+LOdVPcs52A==}
+    dependencies:
+      '@vue/shared': 3.2.37
+
   /@vue/runtime-core/3.2.36:
     resolution: {integrity: sha512-PTWBD+Lub+1U3/KhbCExrfxyS14hstLX+cBboxVHaz+kXoiDLNDEYAovPtxeTutbqtClIXtft+wcGdC+FUQ9qQ==}
     dependencies:
@@ -679,6 +686,9 @@ packages:
 
   /@vue/shared/3.2.36:
     resolution: {integrity: sha512-JtB41wXl7Au3+Nl3gD16Cfpj7k/6aCroZ6BbOiCMFCMvrOpkg/qQUXTso2XowaNqBbnkuGHurLAqkLBxNGc1hQ==}
+
+  /@vue/shared/3.2.37:
+    resolution: {integrity: sha512-4rSJemR2NQIo9Klm1vabqWjD8rs/ZaJSzMxkMNeJS6lHiUjjUeYFbooN19NgFjztubEKh3WlZUeOLVdbbUWHsw==}
 
   /@vueuse/core/8.5.0_vue@3.2.36:
     resolution: {integrity: sha512-VEJ6sGNsPlUp0o9BGda2YISvDZbhWJSOJu5zlp2TufRGVrLcYUKr31jyFEOj6RXzG3k/H4aCYeZyjpItfU8glw==}
