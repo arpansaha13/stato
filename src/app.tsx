@@ -12,6 +12,7 @@ export default defineComponent({
     const activeStoryMapKey = ref('')
     const sidebarMap = shallowRef(new Map<string, string[]>())
     const iframeURL = ref<string | null>(null)
+    const iframeConnected = ref(false)
 
     useWsOn('stato-main:iframe-env', (iframeEnv: IframeEnv) => {
       iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
@@ -19,6 +20,10 @@ export default defineComponent({
 
     useWsOn('stato-main:sidebar-map', (data: Map<string, string[]>) => {
       sidebarMap.value = new Map(data)
+    })
+
+    useWsOn('stato-main:iframe-connected', () => {
+      iframeConnected.value = true
     })
 
     function selectStory(bookName: string, storyName: string) {
@@ -67,6 +72,10 @@ export default defineComponent({
               }
               return books
             })()
+          }
+          {
+            // Overlay to prevent selection until iframe client is connected
+            !iframeConnected.value && <span class="sidebar-overlay" />
           }
         </aside>
         <main class="workspace">

@@ -8,20 +8,12 @@
   --resize-handle-hover-color: #3b82f6;
 
   --sidebar-bgcolor: #e5e5e5;
+  --sidebar-overlay-color: #e5e5e560;
   --sidebar-button-hover-color: #d6d3d1;
   --sidebar-button-active-bgcolor: #a3a3a370;
   --sidebar-button-focus-outline: #38bdf8;
   --sidebar-button-focus-bgcolor: #2563eb;
   --sidebar-button-focus-textcolor: #fafafa;
-}
-.sidebar {
-  height: 100%;
-  overflow: auto;
-  padding: 0.5rem 0;
-  font-size: 14px;
-  background-color: var(--sidebar-bgcolor);
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  /* min-width: fit-content; */
 }
 .workspace {
   position: relative;
@@ -54,6 +46,23 @@
   border: none; /* Reset default border */
   height: 100%;
   width: 100%;
+}
+
+.sidebar {
+  height: 100%;
+  overflow: auto;
+  position: relative;
+  padding: 0.5rem 0;
+  font-size: 14px;
+  background-color: var(--sidebar-bgcolor);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  /* min-width: fit-content; */
+}
+.sidebar-overlay {
+  position: absolute;
+  z-index: 10;
+  inset: 0;
+  background-color: var(--sidebar-overlay-color);
 }
 .sidebar .disclosure {
   padding: 0 0.5rem;

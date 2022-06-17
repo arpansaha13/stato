@@ -240,6 +240,9 @@ export async function dev(args: Argv) {
               sendStorySegments(data.bookName, data.storyName)
             }
           )
+          iframeSocket?.on('connection', () => {
+            ws.send('stato-main:iframe-connected')
+          })
         },
       },
     ],
