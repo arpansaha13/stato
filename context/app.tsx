@@ -1,6 +1,6 @@
 // `h` has to be imported for jsx transform
 import { defineComponent, shallowRef, h, ref, Suspense } from 'vue'
-import { useWsOn } from './composables/useWs'
+import { useWsOn, useWsSend } from './composables/useWs'
 import StoryRenderer from './components/StoryRenderer'
 
 import type { ShallowRef } from 'vue'
@@ -10,7 +10,7 @@ export default defineComponent({
   setup() {
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
-    const activeStory = shallowRef({}) as ShallowRef<Story | undefined>
+    const activeStory = shallowRef({}) as ShallowRef<Story>
     const importStyle = ref<(() => Promise<CSSStyleSheet>) | null>(null)
 
     interface StoryData {
@@ -41,6 +41,17 @@ export default defineComponent({
         importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
         activeStory.value = book.stories[activeStoryName.value as string]
       }
+    })
+
+    useWsOn('stato-iframe:book-unlinked', (bookName: string) => {
+      // If the book that is going to be unlinked, is active
+      if (activeBookName.value === bookName) {
+        activeBookName.value = null
+        activeStoryName.value = null
+        activeStory.value = {} as Story
+        importStyle.value = null
+      }
+      useWsSend('stato-iframe:remove-bundle')
     })
 
     return () => (

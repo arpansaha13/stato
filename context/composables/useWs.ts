@@ -2,9 +2,10 @@
 type IframeClientWsOnEvents =
   | 'stato-iframe:select-story'
   | 'stato-iframe:update-book'
+  | 'stato-iframe:book-unlinked'
 
 // Events sent by iframe client - received on iframe server
-type IframeClientWsSendEvents = ''
+type IframeClientWsSendEvents = 'stato-iframe:remove-bundle'
 
 export function useWsOn(e: IframeClientWsOnEvents, cb: (data?: any) => void) {
   if (import.meta.hot) {

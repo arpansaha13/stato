@@ -248,14 +248,16 @@ export async function dev(args: Argv) {
       await bundleWatcherMap.get(bookName)?.close()
       bundleWatcherMap.delete(bookName)
 
-      // Remove bundle
-      rimraf(
-        resolve(__dirname, '..', 'dev', bookName),
-        { disableGlob: true },
-        (err) => {
-          if (err) console.error(err)
-        }
-      )
+      iframeSocket.send('stato-iframe:book-unlinked', bookName)
+      iframeSocket.on('stato-iframe:remove-bundle', () => {
+        rimraf(
+          resolve(__dirname, '..', 'dev', bookName),
+          { disableGlob: true },
+          (err) => {
+            if (err) console.error(err)
+          }
+        )
+      })
     })
 
   const iframeEnv: IframeEnv = {
