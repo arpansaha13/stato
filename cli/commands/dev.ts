@@ -16,8 +16,9 @@ import type { StatoConfig, IframeEnv } from '../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export type BookHashMap = Map<string, { source: string; style: string | null }>
-export type SidebarMap = Map<string, string[]>
+type BookHashMap = Map<string, { source: string; style: string | null }>
+type SidebarMap = Map<string, string[]>
+
 /**
  * Get the hash of a bundled file from its path.
  * @param path path of the file
@@ -30,10 +31,7 @@ function getFileHash(path: string) {
  * Add a newly bundled book to sidebar map
  * @param bookName
  */
-export async function addToSidebarMap(
-  bookName: string,
-  sidebarMap: SidebarMap
-) {
+async function addToSidebarMap(bookName: string, sidebarMap: SidebarMap) {
   const sourceHash = getFileHash(
     (await fg(`../dev/${bookName}/source-*.mjs`, { cwd: __dirname }))[0]
   )
@@ -49,7 +47,7 @@ export async function addToSidebarMap(
 }
 
 /**
- * Get latest modified file path out of the given paths.
+ * Get most recently modified file path from the given paths.
  * @param paths array of relative file paths
  * @returns the most recently updated file. If the `paths` array is empty, then null will be returned.
  */
@@ -63,7 +61,7 @@ function getUpdatedFile(paths: string[]) {
 }
 
 /**
- * Updates hash of source and .css files of the given book in the bookHashMap and returns the updated hashes
+ * Adds or updates the filename hash of source and .css files of the given book in the bookHashMap and returns the updated hashes
  * @param bookHashMap
  * @param bookName
  * @returns the updated hashes along with bookname
@@ -83,8 +81,9 @@ async function addToBookHashMap(bookHashMap: BookHashMap, bookName: string) {
       ? null
       : getFileHash(getUpdatedFile(stylePaths) as string)
 
-  // Will override if already present
+  // Will override (update) if already present
   bookHashMap.set(bookName, { source: sourceHash, style: styleHash })
+
   return { bookName, sourceHash, styleHash }
 }
 
@@ -144,6 +143,7 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
 /**
  * @param entry path to book
  * @param bookName name of book
+ * @returns a promise for the rollup watcher instance of the given book
  */
 async function watchBook(entry: string, bookName: string) {
   return build({
@@ -215,7 +215,7 @@ export async function dev(args: Argv) {
       console.log(`\t> ${filename}`)
       const bundleWatcher = await watchBook(resolve(path), bookName)
 
-      // Store close handle for this build watcher
+      // Store this build watcher
       bundleWatcherMap.set(bookName, bundleWatcher)
 
       await new Promise<void>((resolve, reject) => {
@@ -245,11 +245,13 @@ export async function dev(args: Argv) {
 
       sidebarMap.delete(bookName)
       bookHashMap.delete(bookName)
+      mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
 
       // Close build watcher
       await bundleWatcherMap.get(bookName)?.close()
       bundleWatcherMap.delete(bookName)
 
+      // Remove bundle
       rimraf(
         resolve(__dirname, '..', 'dev', bookName),
         { disableGlob: true },
@@ -257,7 +259,6 @@ export async function dev(args: Argv) {
           if (err) console.error(err)
         }
       )
-      mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
     })
 
   const iframeEnv: IframeEnv = {
