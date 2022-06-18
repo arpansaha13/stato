@@ -197,8 +197,8 @@ export async function dev(args: Argv) {
   /** Stores the bundle watchers of each book */
   const bundleWatcherMap = new Map<string, RollupWatcher>()
 
-  let mainSocket: WebSocketServer
-  let iframeSocket: WebSocketServer
+  let mainSocket: WebSocketServer | undefined
+  let iframeSocket: WebSocketServer | undefined
 
   const statoConfig = await getConfig()
 
@@ -217,16 +217,15 @@ export async function dev(args: Argv) {
       await new Promise<void>((resolve, reject) => {
         bundleWatcher.on('event', async (event) => {
           if (event.code === 'BUNDLE_END') {
-            if (iframeSocket !== null) {
-              const updatedDetails = await updateBookHashMap(
-                bookHashMap,
-                bookName
-              )
-              iframeSocket.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
-            }
+            const updatedDetails = await updateBookHashMap(
+              bookHashMap,
+              bookName
+            )
+            iframeSocket?.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
+
             // Update sidebar map in case a story is added or removed
             await updateSidebarMap(bookName, sidebarMap)
-            mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
+            mainSocket?.send('stato-main:sidebar-map', Array.from(sidebarMap))
             resolve()
           }
           if (event.code === 'ERROR') {
@@ -234,7 +233,6 @@ export async function dev(args: Argv) {
           }
         })
       })
-      await updateBookHashMap(bookHashMap, bookName)
     })
     .on('unlink', async (path) => {
       const filename = basename(path)
@@ -242,14 +240,14 @@ export async function dev(args: Argv) {
 
       sidebarMap.delete(bookName)
       bookHashMap.delete(bookName)
-      mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
+      mainSocket?.send('stato-main:sidebar-map', Array.from(sidebarMap))
 
       // Close build watcher
       await bundleWatcherMap.get(bookName)?.close()
       bundleWatcherMap.delete(bookName)
 
-      iframeSocket.send('stato-iframe:book-unlinked', bookName)
-      iframeSocket.on('stato-iframe:remove-bundle', () => {
+      iframeSocket?.send('stato-iframe:book-unlinked', bookName)
+      iframeSocket?.on('stato-iframe:remove-bundle', () => {
         rimraf(
           resolve(__dirname, '..', 'dev', bookName),
           { disableGlob: true },
@@ -290,12 +288,15 @@ export async function dev(args: Argv) {
                 | string
                 | null
 
-              iframeSocket.send('stato-iframe:select-story', {
-                bookName: data.bookName,
-                storyName: data.storyName,
-                sourceHash,
-                styleHash,
-              })
+              ;(iframeSocket as WebSocketServer).send(
+                'stato-iframe:select-story',
+                {
+                  bookName: data.bookName,
+                  storyName: data.storyName,
+                  sourceHash,
+                  styleHash,
+                }
+              )
             }
           )
           iframeSocket?.on('connection', () => {
