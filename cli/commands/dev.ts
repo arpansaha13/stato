@@ -26,26 +26,6 @@ type SidebarMap = Map<string, string[]>
 function getFileHash(path: string) {
   return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
 }
-
-/**
- * Add a newly bundled book to sidebar map
- * @param bookName
- */
-async function addToSidebarMap(bookName: string, sidebarMap: SidebarMap) {
-  const sourceHash = getFileHash(
-    (await fg(`../dev/${bookName}/source-*.mjs`, { cwd: __dirname }))[0]
-  )
-  const path = resolve(__dirname, `../dev/${bookName}/source-${sourceHash}.mjs`)
-  const { default: book } = await import(pathToFileURL(path).href)
-
-  if (sidebarMap.has(bookName)) {
-    console.warn(
-      `Duplicate book name ${bookName}. This will override the previous entry.`
-    )
-  }
-  sidebarMap.set(bookName, Object.keys(book.stories))
-}
-
 /**
  * Get most recently modified file path from the given paths.
  * @param paths array of relative file paths
@@ -61,12 +41,28 @@ function getUpdatedFile(paths: string[]) {
 }
 
 /**
- * Adds or updates the filename hash of source and .css files of the given book in the bookHashMap and returns the updated hashes
+ * Updates the sidebar map or adds a newly bundled book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
+ * @param bookName
+ */
+async function updateSidebarMap(bookName: string, sidebarMap: SidebarMap) {
+  const sourceHash = getFileHash(
+    getUpdatedFile(
+      await fg(`../dev/${bookName}/source-*.mjs`, { cwd: __dirname })
+    ) as string
+  )
+  const path = resolve(__dirname, `../dev/${bookName}/source-${sourceHash}.mjs`)
+  const { default: book } = await import(pathToFileURL(path).href)
+
+  sidebarMap.set(bookName, Object.keys(book.stories))
+}
+
+/**
+ * Adds or updates the filename hash of source and .css files of the given book in the bookHashMap and returns the updated hashes. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
  * @param bookHashMap
  * @param bookName
  * @returns the updated hashes along with bookname
  */
-async function addToBookHashMap(bookHashMap: BookHashMap, bookName: string) {
+async function updateBookHashMap(bookHashMap: BookHashMap, bookName: string) {
   const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
     cwd: __dirname,
   })
@@ -222,12 +218,15 @@ export async function dev(args: Argv) {
         bundleWatcher.on('event', async (event) => {
           if (event.code === 'BUNDLE_END') {
             if (iframeSocket !== null) {
-              const updatedDetails = await addToBookHashMap(
+              const updatedDetails = await updateBookHashMap(
                 bookHashMap,
                 bookName
               )
               iframeSocket.send('stato-iframe:update-book', updatedDetails) // Send to iframe client for update
             }
+            // Update sidebar map in case a story is added or removed
+            await updateSidebarMap(bookName, sidebarMap)
+            mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
             resolve()
           }
           if (event.code === 'ERROR') {
@@ -235,9 +234,7 @@ export async function dev(args: Argv) {
           }
         })
       })
-      await addToSidebarMap(bookName, sidebarMap)
-      await addToBookHashMap(bookHashMap, bookName)
-      mainSocket.send('stato-main:sidebar-map', Array.from(sidebarMap))
+      await updateBookHashMap(bookHashMap, bookName)
     })
     .on('unlink', async (path) => {
       const filename = basename(path)
