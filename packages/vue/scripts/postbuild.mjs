@@ -34,7 +34,7 @@ async function copyDir(src, dest) {
   }
 }
 
-async function prepack() {
+async function postbuild() {
   const __filename = fileURLToPath(import.meta.url)
   const __dirname = dirname(__filename)
 
@@ -71,4 +71,4 @@ async function prepack() {
   )
 }
 
-prepack()
+postbuild()
