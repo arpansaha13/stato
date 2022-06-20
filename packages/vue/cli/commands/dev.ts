@@ -23,8 +23,15 @@ type SidebarMap = Map<string, string[]>
  * Get the hash of a bundled file from its path.
  * @param path path of the file
  */
-function getFileHash(path: string) {
+function getFileHash(path: string): string {
   return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
+}
+function getBookName(filename: string): string {
+  let end = filename.indexOf('.stories.ts')
+  if (end === -1) end = filename.indexOf('.stories.js')
+  if (end === -1) end = filename.indexOf('.stories.mjs')
+  if (end === -1) end = filename.indexOf('.stories.cjs')
+  return filename.substring(0, end)
 }
 /**
  * Get most recently modified file path from the given paths.
@@ -206,7 +213,7 @@ export async function dev(args: Argv) {
     .watch(statoConfig.content) // relative to root
     .on('add', async (path) => {
       const filename = basename(path)
-      const bookName = filename.substring(0, filename.indexOf('.stories.ts'))
+      const bookName = getBookName(filename)
 
       console.log(`\t> ${filename}`)
       const bundleWatcher = await watchBook(resolve(path), bookName)
@@ -236,7 +243,7 @@ export async function dev(args: Argv) {
     })
     .on('unlink', async (path) => {
       const filename = basename(path)
-      const bookName = filename.substring(0, filename.indexOf('.stories.ts'))
+      const bookName = getBookName(filename)
 
       sidebarMap.delete(bookName)
       bookHashMap.delete(bookName)
