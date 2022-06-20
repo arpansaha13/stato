@@ -356,6 +356,7 @@ export async function dev(args: Argv) {
     optimizeDeps: {
       exclude: ['@stato/vue/context'], // Imported in .stato/script.mjs - should not be pre-bundled
     },
+    css: statoConfig.viteOptions?.css,
     build: {
       rollupOptions: {
         input: {
