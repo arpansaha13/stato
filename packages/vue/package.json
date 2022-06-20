@@ -44,8 +44,8 @@
   "dependencies": {
     "@vitejs/plugin-vue": "^2.3.3",
     "chokidar": "^3.5.3",
-    "vite": "^2.9.9",
-    "vue": "^3.2.36"
+    "vite": "^2.9.12",
+    "vue": "^3.2.37"
   },
   "devDependencies": {
     "@headlessui/vue": "^1.6.4",

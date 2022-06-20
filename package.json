@@ -13,15 +13,22 @@
   "bugs": {
     "url": "https://github.com/lemontreejs/stato/issues"
   },
-  "scripts": {
-    "preinstall": "npx only-allow pnpm",
-    "build:vue": "pnpm -F ./packages/vue build",
-    "pack:vue": "cd ./packages/vue && pnpm pack"
-  },
   "license": "ISC",
   "keywords": [
     "stato",
     "stories",
     "components"
-  ]
+  ],
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build:vue": "pnpm -F ./packages/vue build",
+    "pack:vue": "cd ./packages/vue && pnpm pack"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "^2.9.12",
+      "vue": "^3.2.37",
+      "@vitejs/plugin-vue": "^2.3.3"
+    }
+  }
 }
