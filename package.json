@@ -15,7 +15,8 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "build:vue": "pnpm -F vue build"
+    "build:vue": "pnpm -F ./packages/vue build",
+    "pack:vue": "cd ./packages/vue && pnpm pack"
   },
   "license": "ISC",
   "keywords": [

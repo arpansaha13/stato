@@ -39,8 +39,7 @@
     "clean": "if exist dist rd dist /s /q",
     "typecheck": "vue-tsc --noEmit",
     "build": "pnpm clean && pnpm typecheck && node scripts/build.mjs && pnpm build:types && node scripts/postbuild.mjs",
-    "build:types": "tsc -p tsconfig.types.json",
-    "package": "pnpm build && cd dist && pnpm pack"
+    "build:types": "tsc -p tsconfig.types.json"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^2.3.3",
