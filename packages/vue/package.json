@@ -20,7 +20,7 @@
     "./context": "./dist/context/iframe.mjs"
   },
   "license": "ISC",
-  "homepage": "https://github.com/lemontreejs/stato",
+  "homepage": "https://github.com/lemontreejs/stato/tree/main/packages/vue#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/lemontreejs/stato",
@@ -29,6 +29,12 @@
   "bugs": {
     "url": "https://github.com/lemontreejs/stato/issues"
   },
+  "keywords": [
+    "stato",
+    "vue",
+    "stories",
+    "components"
+  ],
   "files": [
     "bin",
     "dist"
@@ -67,11 +73,5 @@
   },
   "peerDependencies": {
     "vue": "^3.2.36"
-  },
-  "keywords": [
-    "stato",
-    "vue",
-    "stories",
-    "components"
-  ]
+  }
 }

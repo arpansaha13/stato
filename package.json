@@ -5,7 +5,7 @@
   "version": "0.0.0",
   "description": "A lightweight tool for developing components in isolation.",
   "author": "Arpan Saha <https://github.com/lemontreejs>",
-  "homepage": "https://github.com/lemontreejs/stato",
+  "homepage": "https://github.com/lemontreejs/stato#readme",
   "repository": {
     "type": "git",
     "url": "https://github.com/lemontreejs/stato"
