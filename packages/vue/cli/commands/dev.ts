@@ -126,6 +126,7 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
     await build({
       root,
       logLevel: 'error',
+      publicDir: false, // Do not copy static assets
       build: {
         lib: {
           entry: resolvedPath,
@@ -150,7 +151,16 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
  */
 async function watchBook(entry: string, bookName: string) {
   return build({
-    plugins: [vue()],
+    plugins: [
+      vue({
+        // Do not transform static assets
+        template: {
+          transformAssetUrls: {
+            includeAbsolute: false,
+          },
+        },
+      }),
+    ],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
     build: {
@@ -332,6 +342,7 @@ export async function dev(args: Argv) {
     mode: 'development',
     root: resolve(process.cwd(), '.stato'),
     cacheDir: '../node_modules/.vite-stato/context',
+    publicDir: '../public',
     plugins: [
       vue(),
       {
