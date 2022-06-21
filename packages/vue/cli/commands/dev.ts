@@ -124,6 +124,7 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
     const outDir = '.stato'
     const name = 'stato.config.cjs'
     await build({
+      configFile: false,
       root,
       logLevel: 'error',
       publicDir: false, // Do not copy static assets
@@ -134,6 +135,7 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
           fileName: () => name,
         },
         outDir,
+        manifest: false,
         emptyOutDir: false, // Must be false
         sourcemap: false,
       },
