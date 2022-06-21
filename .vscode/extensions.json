@@ -1,6 +1,7 @@
 {
   "recommendations": [
-    "Vue.volar",
+    "vue.volar",
     "esbenp.prettier-vscode",
+    "syler.sass-indented"
   ]
 }

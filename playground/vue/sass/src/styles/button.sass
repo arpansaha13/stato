@@ -1,0 +1,42 @@
+.button
+  font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif
+  font-weight: 700
+  border: none
+  border-radius: 0.3rem
+  cursor: pointer
+  display: inline-block
+  line-height: 1
+  transition: background-color 80ms ease-in-out
+
+  &--primary
+    color: white
+    background-color: #3b82f6
+
+    &:hover
+      background-color: #2563eb
+
+    &:active
+      background-color: #1d4ed8
+
+  &--secondary
+    color: #111827
+    background-color: transparent
+    box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset
+
+    &:hover
+      background-color: #f3f4f6
+
+    &:active
+      background-color: #e5e7eb
+
+  &--small
+    font-size: 12px
+    padding: 10px 16px
+
+  &--medium
+    font-size: 14px
+    padding: 11px 20px
+
+  &--large
+    font-size: 16px
+    padding: 12px 24px
