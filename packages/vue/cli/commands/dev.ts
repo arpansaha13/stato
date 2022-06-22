@@ -331,6 +331,9 @@ export async function dev(args: Argv) {
         disableGlobbing: false,
       },
     },
+    optimizeDeps: {
+      include: ['vue'],
+    },
     build: {
       rollupOptions: {
         input: {
@@ -367,6 +370,7 @@ export async function dev(args: Argv) {
       },
     },
     optimizeDeps: {
+      include: ['vue', 'vue/compiler-sfc'],
       exclude: ['@stato/vue/context'], // Imported in .stato/script.mjs - should not be pre-bundled
     },
     css: statoConfig.viteOptions?.css,
