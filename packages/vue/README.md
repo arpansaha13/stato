@@ -131,7 +131,9 @@ export interface StatoConfig {
    * Vite config options.
    */
   viteOptions?: {
+    base: UserConfig['base']
     css: UserConfig['css']
+    publicDir: UserConfig['publicDir']
   }
 }
 ```
