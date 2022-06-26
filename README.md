@@ -10,7 +10,7 @@
 
 ## Packages
 
-- [@stato/vue](https://github.com/lemontreejs/stato/tree/main/packages/vue#readme)
+- [@stato/vue](https://github.com/arpansaha13/stato/tree/main/packages/vue#readme)
 
 <br>
 

@@ -2,7 +2,7 @@
   "name": "@stato/vue",
   "packageManager": "pnpm@7.1.9",
   "version": "0.0.0",
-  "author": "Arpan Saha <https://github.com/lemontreejs>",
+  "author": "Arpan Saha <https://github.com/arpansaha13>",
   "description": "A lightweight tool for vue3 for developing components in isolation.",
   "type": "module",
   "main": "./dist/helpers/index.cjs",
@@ -20,14 +20,14 @@
     "./context": "./dist/context/iframe.mjs"
   },
   "license": "ISC",
-  "homepage": "https://github.com/lemontreejs/stato/tree/main/packages/vue#readme",
+  "homepage": "https://github.com/arpansaha13/stato/tree/main/packages/vue#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lemontreejs/stato",
+    "url": "https://github.com/arpansaha13/stato",
     "directory": "packages/vue"
   },
   "bugs": {
-    "url": "https://github.com/lemontreejs/stato/issues"
+    "url": "https://github.com/arpansaha13/stato/issues"
   },
   "keywords": [
     "stato",

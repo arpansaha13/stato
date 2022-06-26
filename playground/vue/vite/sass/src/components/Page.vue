@@ -34,7 +34,7 @@
       </ul>
       <p>
         <a
-          href="https://github.com/lemontreejs/stato#readme"
+          href="https://github.com/arpansaha13/stato#readme"
           target="_blank"
           rel="noopener noreferrer"
           >Stato documentation</a

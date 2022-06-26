@@ -4,14 +4,14 @@
   "private": true,
   "version": "0.0.0",
   "description": "A lightweight tool for developing components in isolation.",
-  "author": "Arpan Saha <https://github.com/lemontreejs>",
-  "homepage": "https://github.com/lemontreejs/stato#readme",
+  "author": "Arpan Saha <https://github.com/arpansaha13>",
+  "homepage": "https://github.com/arpansaha13/stato#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lemontreejs/stato"
+    "url": "https://github.com/arpansaha13/stato"
   },
   "bugs": {
-    "url": "https://github.com/lemontreejs/stato/issues"
+    "url": "https://github.com/arpansaha13/stato/issues"
   },
   "license": "ISC",
   "keywords": [
