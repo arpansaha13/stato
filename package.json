@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "clean:nm": "pnpm run -r clean:nm && if exist node_modules rd node_modules /s /q",
     "build:vue": "pnpm -F ./packages/vue build",
     "pack:vue": "cd ./packages/vue && pnpm pack"
   },

@@ -43,6 +43,7 @@
     "preinstall": "npx only-allow pnpm",
     "dev": "vite --open",
     "clean": "if exist dist rd dist /s /q",
+    "clean:nm": "if exist node_modules rd node_modules /s /q",
     "typecheck": "vue-tsc --noEmit",
     "build": "pnpm clean && pnpm typecheck && node scripts/build.mjs && pnpm build:types && node scripts/postbuild.mjs",
     "build:types": "tsc -p tsconfig.types.json"

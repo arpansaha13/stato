@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "clean:nm": "if exist node_modules rd node_modules /s /q",
     "stato": "stato --open",
     "stato:init": "stato init"
   },
