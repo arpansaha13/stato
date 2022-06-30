@@ -348,11 +348,9 @@ export async function dev(args: Argv) {
     root: resolve(process.cwd(), '.stato'),
     cacheDir: '../node_modules/.vite-stato/context',
     base: statoConfig.viteOptions?.base,
-    publicDir: resolve(
-      process.cwd(),
-      '..',
-      statoConfig.viteOptions?.publicDir ? 'public' : ''
-    ),
+    publicDir: statoConfig.viteOptions?.publicDir
+      ? resolve(process.cwd(), '..', statoConfig.viteOptions.publicDir)
+      : '../public',
     plugins: [
       vue(),
       {
