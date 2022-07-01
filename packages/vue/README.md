@@ -1,4 +1,4 @@
-## Installation
+# Installation
 
 ```bash
 npm install @stato/vue --save-dev
@@ -10,7 +10,7 @@ yarn add @stato/vue --dev
 pnpm add -D @stato/vue
 ```
 
-## Quick start
+# Quick start
 
 Add these scripts to your root `package.json`:
 
@@ -163,5 +163,47 @@ export default defineStatoConfig({
   viteOptions: {
     css: { /* css options */ }
   }
+})
+```
+
+# Stories
+
+Make a file, say `Button.stories.js`. Lets call it a `book` which will export the stories. `@stato/vue` exports a typescript helper `defineBook` which can wrap the default export.
+
+```js
+// Button.stories.js
+import { defineBook } from '@stato/vue'
+import Button from './Button.vue'
+
+const Template = (props, slot) => ({
+  components: { Button },
+  setup() {
+    return { props, slot }
+  },
+  template: '<Button v-bind="props">{{ slot }}</Button>',
+})
+
+export default defineBook({
+  stories: {
+    Primary: Template(
+      {
+        primary: true,
+      },
+      'Button'
+    ),
+    Secondary: Template(null, 'Button'),
+    Large: Template(
+      {
+        size: 'large',
+      },
+      'Button'
+    ),
+    Small: Template(
+      {
+        size: 'small',
+      },
+      'Button'
+    ),
+  },
 })
 ```
