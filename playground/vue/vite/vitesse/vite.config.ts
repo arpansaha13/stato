@@ -75,6 +75,10 @@ export default defineConfig({
     }),
   ],
 
+  optimizeDeps: {
+    include: ['vue'],
+  },
+
   // https://github.com/antfu/vite-ssg
   ssgOptions: {
     script: 'async',

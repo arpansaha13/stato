@@ -1,5 +1,5 @@
 <template>
-  <button type="button" :class="classes" :style="style">
+  <button type="button" :class="classes">
     <slot />
   </button>
 </template>
@@ -22,9 +22,6 @@ export default defineComponent({
         return ['small', 'medium', 'large'].indexOf(value) !== -1
       },
     },
-    backgroundColor: {
-      type: String,
-    },
   },
 
   setup(props) {
@@ -35,9 +32,6 @@ export default defineComponent({
         'button--primary': props.primary,
         'button--secondary': !props.primary,
         [`button--${props.size}`]: true,
-      })),
-      style: computed(() => ({
-        backgroundColor: props.backgroundColor,
       })),
     }
   },
