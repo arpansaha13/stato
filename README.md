@@ -15,3 +15,7 @@
 <br>
 
 ❤ Inspired from [Storybook](https://github.com/storybookjs/storybook)
+
+## License
+
+MIT
