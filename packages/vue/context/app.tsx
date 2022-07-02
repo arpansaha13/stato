@@ -4,12 +4,13 @@ import { useWsOn, useWsSend } from './composables/useWs'
 import StoryRenderer from './components/StoryRenderer'
 
 import type { ShallowRef } from 'vue'
-import type { Story } from '../types'
+import type { Book, Story } from '../types'
 
 export default defineComponent({
   setup() {
     const activeBookName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
+    const activeBook = ref<Book | null>(null)
     const activeStory = shallowRef({}) as ShallowRef<Story>
     const importStyle = ref<(() => Promise<CSSStyleSheet>) | null>(null)
 
@@ -22,24 +23,24 @@ export default defineComponent({
       styleHash: string | null
     }
     useWsOn('stato-iframe:select-story', async ({ bookName, sourceHash, storyName, styleHash }: StoryData) => {
-      const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
-
-      activeBookName.value = bookName
-      activeStoryName.value = storyName
-      activeStory.value = book.stories[storyName]
-
-      if (typeof activeStory.value === 'undefined') {
-        console.warn(`Story ${storyName} of book ${bookName} is undefined.`)
+      if (activeBookName.value !== bookName) {
+        const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
+        activeBook.value = book
+        activeBookName.value = bookName
       }
+
+      activeStoryName.value = storyName
+      activeStory.value = (activeBook.value as Book).stories[storyName]
+
       importStyle.value = styleHash === null ? null : (() => import(`../dev/${bookName}/style-${styleHash}.css`))
     })
 
     useWsOn('stato-iframe:update-book', async ({bookName, sourceHash, styleHash}: {bookName: string; sourceHash: string; styleHash: string | null}) => {
       if (activeBookName.value === bookName) {
         const { default: book } = await import(`../dev/${bookName}/source-${sourceHash}.mjs`)
-
-        importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
+        activeBook.value = book
         activeStory.value = book.stories[activeStoryName.value as string]
+        importStyle.value = styleHash === null ? null : () => import(`../dev/${bookName}/style-${styleHash}.css`)
       }
     })
 
