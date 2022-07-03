@@ -30,7 +30,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import Button from './Button.vue'
-import '../styles/header.css'
+import '../styles/navbar.css'
 
 export default defineComponent({
   name: 'Navbar',
