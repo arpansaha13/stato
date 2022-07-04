@@ -328,6 +328,7 @@ export async function dev(args: Argv) {
       port: 3700,
       watch: {
         disableGlobbing: false,
+        ignored: [resolve(__dirname, '..', 'src')],
       },
     },
     optimizeDeps: {
@@ -354,9 +355,6 @@ export async function dev(args: Argv) {
       vue(),
       {
         name: 'stato-iframe',
-        handleHotUpdate() {
-          return []
-        },
         configureServer({ ws }) {
           iframeSocket = ws
         },
@@ -368,6 +366,13 @@ export async function dev(args: Argv) {
         allow: [
           searchForWorkspaceRoot(process.cwd()),
           resolve(__dirname, '..', 'dev'),
+        ],
+      },
+      watch: {
+        // Do not register watchers
+        ignored: [
+          resolve(__dirname, '..', 'dev'),
+          resolve(__dirname, '..', 'context'),
         ],
       },
     },
