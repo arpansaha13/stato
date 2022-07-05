@@ -21,12 +21,14 @@ const iframeDocument = `<!DOCTYPE html>
 const iframeScript = `import '@stato/vue/context'
 
 // your custom styles here
+import './style.css'
 `
 
 export async function init() {
   const root = process.cwd()
   const contextHtmlPath = resolve(root, '.stato', 'index.html')
   const contextScriptPath = resolve(root, '.stato', 'script.mjs')
+  const contextStylePath = resolve(root, '.stato', 'style.css')
 
   if (!existsSync('./stato.config.js')) {
     await promises.writeFile(
@@ -53,5 +55,9 @@ export async function init() {
       Buffer.from(iframeScript, 'utf-8')
     )
     console.log('created .stato/script.mjs')
+  }
+  if (!existsSync(contextStylePath)) {
+    await promises.writeFile(contextStylePath, Buffer.from('', 'utf-8'))
+    console.log('created .stato/style.css')
   }
 }
