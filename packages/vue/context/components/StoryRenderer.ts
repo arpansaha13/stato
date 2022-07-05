@@ -21,7 +21,7 @@ export default defineComponent({
   },
   async setup(props) {
     const dynamic = shallowRef(defineComponent({}))
-    const { css } = useStyleTag('')
+    const { css } = useStyleTag('', { id: 'stato_styletag' })
 
     async function render() {
       const components = props.story.components ?? {}
