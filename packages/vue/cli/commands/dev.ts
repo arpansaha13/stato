@@ -149,6 +149,8 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
  */
 async function watchBook(entry: string, bookName: string) {
   return build({
+    configFile: false,
+    mode: 'development',
     plugins: [
       vue({
         // Do not transform static assets
