@@ -1,37 +1,30 @@
-import { existsSync, promises, statSync } from 'fs'
-import { basename, dirname, resolve } from 'path'
+import { existsSync, promises } from 'fs'
+import { basename, dirname, extname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 
-import fg from 'fast-glob'
 import rimraf from 'rimraf'
 import chokidar from 'chokidar'
-import maxBy from 'lodash/maxBy'
-import { createServer, build, searchForWorkspaceRoot } from 'vite'
+import { createServer, build } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
 import type { Argv } from 'mri'
-import type { RollupWatcher } from 'rollup'
 import type { InlineConfig, WebSocketServer } from 'vite'
 import type { StatoConfig, IframeEnv } from '../../types'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-type BookHashMap = Map<string, { source: string; style: string | null }>
 type SidebarMap = Map<string, string[]>
+type BookExtMap = Map<string, string>
 
 /** The table of books and stories for the sidebar */
 const sidebarMap: SidebarMap = new Map()
+/** Record of extensions of book modules */
+const bookExtMap: BookExtMap = new Map()
 
-/** Hashes of source and .css files of books */
-const bookHashMap: BookHashMap = new Map()
+let mainSocket: WebSocketServer | undefined
+let iframeSocket: WebSocketServer | undefined
+let statoConfig: Readonly<StatoConfig>
 
-/**
- * Get the hash of a bundled file from its path.
- * @param path path of the file
- */
-function getFileHash(path: string): string {
-  return path.split('/').pop()?.split('-').pop()?.split('.')[0] as string
-}
 function getBookName(filename: string): string {
   let end = filename.indexOf('.stories.ts')
   if (end === -1) end = filename.indexOf('.stories.js')
@@ -39,57 +32,60 @@ function getBookName(filename: string): string {
   if (end === -1) end = filename.indexOf('.stories.cjs')
   return filename.substring(0, end)
 }
-/**
- * Get most recently modified file path from the given paths.
- * @param paths array of relative file paths
- * @returns the most recently updated file. If the `paths` array is empty, then null will be returned.
- */
-function getUpdatedFile(paths: string[]) {
-  if (paths.length === 0) return null
-
-  return maxBy(paths, (path: string) => {
-    // ctime = creation time
-    return statSync(resolve(__dirname, path)).ctime
-  }) as string
-}
 
 /**
  * Updates the sidebar map or adds a newly bundled book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
+ * @param bookName name of book
+ * @param bookPath resolved path to book
  */
-async function updateSidebarMap(bookName: string, sourcePaths: string[]) {
-  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
-  const path = resolve(__dirname, `../dev/${bookName}/source-${sourceHash}.mjs`)
-  const { default: book } = await import(pathToFileURL(path).href)
+async function updateSidebarMap(bookName: string, bookPath: string) {
+  // compile -> import -> delete
+  const outDir = resolve(__dirname, '..', 'dev', bookName)
+  await build({
+    configFile: false,
+    mode: 'development',
+    plugins: [
+      vue({
+        // Do not transform static assets
+        template: {
+          transformAssetUrls: {
+            includeAbsolute: false,
+          },
+        },
+      }),
+    ],
+    root: resolve(__dirname, '..'),
+    logLevel: 'error',
+    build: {
+      lib: {
+        entry: bookPath,
+        name: bookName,
+        formats: ['es'],
+        fileName: () => 'source.mjs',
+      },
+      outDir,
+      emptyOutDir: false,
+      rollupOptions: {
+        external: ['vue'],
+      },
+    },
+    esbuild: {
+      minify: true,
+    },
+  })
+  const { default: book } = await import(
+    pathToFileURL(resolve(outDir, 'source.mjs')).href
+  )
   sidebarMap.set(bookName, Object.keys(book.stories))
-}
-
-/**
- * Adds or updates the filename hash of source and .css files of the given book in the bookHashMap and returns the updated hashes. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
- * @returns the updated hashes along with bookname
- */
-function updateBookHashMap(
-  bookName: string,
-  sourcePaths: string[],
-  stylePaths: string[]
-) {
-  /** Hash part of the updated source file */
-  const sourceHash = getFileHash(getUpdatedFile(sourcePaths) as string)
-  /** Hash part of the updated .css file */
-  const styleHash =
-    stylePaths.length === 0
-      ? null
-      : getFileHash(getUpdatedFile(stylePaths) as string)
-
-  // Will override (update) if already present
-  bookHashMap.set(bookName, { source: sourceHash, style: styleHash })
-
-  return { bookName, sourceHash, styleHash }
+  rimraf(outDir, { disableGlob: true }, (err) => {
+    if (err) console.error(err)
+  })
 }
 
 /**
  * @returns a promise for the imported config object from stato.config
  */
-async function getConfig(): Promise<Readonly<StatoConfig>> {
+async function getConfig() {
   const root = process.cwd()
 
   let resolvedPath
@@ -104,8 +100,8 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
   if (existsSync(mjsStatoConfig)) resolvedPath = mjsStatoConfig
 
   if (typeof resolvedPath === 'undefined') {
-    console.error(`No config file found at ${root}`)
-    process.exit(1)
+    console.log(`No stato config file found at ${root}`)
+    return
   }
 
   async function importConfig(resolvedPath: string): Promise<StatoConfig> {
@@ -117,7 +113,7 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
     config = await importConfig(resolvedPath)
   } else {
     // compile -> import -> delete
-    const outDir = '.stato'
+    const outDir = 'stato'
     const name = 'stato.config.cjs'
     await build({
       configFile: false,
@@ -139,119 +135,34 @@ async function getConfig(): Promise<Readonly<StatoConfig>> {
     config = await importConfig(resolve(root, outDir, name))
     promises.unlink(resolve(root, outDir, name))
   }
-  return config
-}
-
-/**
- * @param entry path to book
- * @param bookName name of book
- * @returns a promise for the rollup watcher instance of the given book
- */
-async function watchBook(entry: string, bookName: string) {
-  return build({
-    configFile: false,
-    mode: 'development',
-    plugins: [
-      vue({
-        // Do not transform static assets
-        template: {
-          transformAssetUrls: {
-            includeAbsolute: false,
-          },
-        },
-      }),
-    ],
-    root: resolve(__dirname, '..'),
-    logLevel: 'error',
-    build: {
-      lib: {
-        entry,
-        name: bookName,
-        formats: ['es'],
-        fileName: () => 'source-[hash].mjs',
-      },
-      watch: {},
-      outDir: resolve(__dirname, '..', 'dev', bookName),
-      emptyOutDir: false,
-      rollupOptions: {
-        external: ['vue'],
-        output: {
-          assetFileNames: 'style-[hash].[ext]', // For hashed .css files
-        },
-      },
-    },
-    esbuild: {
-      minify: true,
-    },
-  }) as Promise<RollupWatcher>
-}
-
-async function clearDevDir() {
-  const devDir = resolve(__dirname, '..', 'dev')
-
-  if (existsSync(devDir)) {
-    await new Promise<void>((resolve, reject) => {
-      rimraf(devDir, { disableGlob: true }, (err) => {
-        if (err) {
-          console.error(err)
-          reject()
-        }
-        resolve()
-      })
-    })
-  }
+  statoConfig = config
 }
 
 export async function dev(args: Argv) {
-  await clearDevDir()
-
-  /** Stores the bundle watchers of each book */
-  const bundleWatcherMap = new Map<string, RollupWatcher>()
-
-  let mainSocket: WebSocketServer | undefined
-  let iframeSocket: WebSocketServer | undefined
-
-  const statoConfig = await getConfig()
+  await getConfig()
 
   chokidar
-    .watch(statoConfig.content) // relative to root
+    .watch('stato/stories/**/*.stories.{js,ts}') // relative to root
     .on('add', async (path) => {
       const filename = basename(path)
       const bookName = getBookName(filename)
+      const ext = extname(path)
 
       console.log(`\t> add ${filename}`)
-      const bundleWatcher = await watchBook(resolve(path), bookName)
+      // Update sidebar map
+      await updateSidebarMap(bookName, resolve(path))
+      // Store the extension for importing from app
+      bookExtMap.set(bookName, ext)
+      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
+    })
+    .on('change', async (path) => {
+      const filename = basename(path)
+      const bookName = getBookName(filename)
 
-      // Store this build watcher
-      bundleWatcherMap.set(bookName, bundleWatcher)
-
-      await new Promise<void>((resolve, reject) => {
-        bundleWatcher.on('event', async (event) => {
-          if (event.code === 'BUNDLE_END') {
-            const sourcePaths = await fg(`../dev/${bookName}/source-*.mjs`, {
-              cwd: __dirname,
-            })
-            const stylePaths = await fg(`../dev/${bookName}/style-*.css`, {
-              cwd: __dirname,
-            })
-            const updatedDetails = updateBookHashMap(
-              bookName,
-              sourcePaths,
-              stylePaths
-            )
-            // Send to iframe client for update
-            iframeSocket?.send('stato-iframe:update-book', updatedDetails)
-
-            // Update sidebar map in case a story is added or removed
-            await updateSidebarMap(bookName, sourcePaths)
-            mainSocket?.send('stato-main:sidebar-map', Array.from(sidebarMap))
-            resolve()
-          }
-          if (event.code === 'ERROR') {
-            reject()
-          }
-        })
-      })
+      console.log(`\t> update ${filename}`)
+      // Update sidebar map in case a story is added or removed
+      await updateSidebarMap(bookName, resolve(path))
+      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
     })
     .on('unlink', async (path) => {
       const filename = basename(path)
@@ -259,23 +170,9 @@ export async function dev(args: Argv) {
       console.log(`\t> remove ${filename}`)
 
       sidebarMap.delete(bookName)
-      bookHashMap.delete(bookName)
-      mainSocket?.send('stato-main:sidebar-map', Array.from(sidebarMap))
-
-      // Close build watcher
-      await bundleWatcherMap.get(bookName)?.close()
-      bundleWatcherMap.delete(bookName)
+      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
 
       iframeSocket?.send('stato-iframe:book-unlinked', bookName)
-      iframeSocket?.on('stato-iframe:remove-bundle', () => {
-        rimraf(
-          resolve(__dirname, '..', 'dev', bookName),
-          { disableGlob: true },
-          (err) => {
-            if (err) console.error(err)
-          }
-        )
-      })
     })
 
   const iframeEnv: IframeEnv = {
@@ -296,25 +193,18 @@ export async function dev(args: Argv) {
           mainSocket = ws
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
-            ws.send('stato-main:sidebar-map', Array.from(sidebarMap))
+            ws.send('stato-main:sidebar', Array.from(sidebarMap))
           })
           ws.on(
             'stato-main:select-story',
             (data: { bookName: string; storyName: string }) => {
               // Send the required info for importing stories in client.
-              const sourceHash = bookHashMap.get(data.bookName)
-                ?.source as string
-              const styleHash = bookHashMap.get(data.bookName)?.style as
-                | string
-                | null
-
               ;(iframeSocket as WebSocketServer).send(
                 'stato-iframe:select-story',
                 {
                   bookName: data.bookName,
                   storyName: data.storyName,
-                  sourceHash,
-                  styleHash,
+                  ext: bookExtMap.get(data.bookName),
                 }
               )
             }
@@ -347,7 +237,7 @@ export async function dev(args: Argv) {
   const iframeServerConfig: InlineConfig = {
     configFile: false,
     mode: 'development',
-    root: resolve(process.cwd(), '.stato'),
+    root: resolve(process.cwd(), 'stato'),
     cacheDir: '../node_modules/.vite-stato/context',
     base: statoConfig.viteOptions?.base,
     publicDir: statoConfig.viteOptions?.publicDir
@@ -364,29 +254,18 @@ export async function dev(args: Argv) {
     ],
     server: {
       port: 3800,
-      fs: {
-        allow: [
-          searchForWorkspaceRoot(process.cwd()),
-          resolve(__dirname, '..', 'dev'),
-        ],
-      },
       watch: {
-        // Do not register watchers
-        ignored: [
-          resolve(__dirname, '..', 'dev'),
-          resolve(__dirname, '..', 'context'),
-        ],
+        ignored: [resolve(process.cwd(), 'stato', 'context.mjs')],
       },
     },
     optimizeDeps: {
       include: ['vue', 'vue/compiler-sfc'],
-      exclude: ['@stato/vue/context'], // Imported in .stato/script.mjs - should not be pre-bundled
     },
     css: statoConfig.viteOptions?.css,
     build: {
       rollupOptions: {
         input: {
-          app: resolve(process.cwd(), '.stato', 'index.html'),
+          app: resolve(process.cwd(), 'stato', 'index.html'),
         },
       },
     },

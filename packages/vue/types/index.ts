@@ -3,10 +3,6 @@ import { UserConfig } from 'vite'
 
 export interface StatoConfig {
   /**
-   * Paths or glob patterns to the stories relative to the project root.
-   */
-  content: string[]
-  /**
    * Vite config options.
    */
   viteOptions?: {

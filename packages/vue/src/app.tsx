@@ -18,7 +18,7 @@ export default defineComponent({
       iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
     })
 
-    useWsOn('stato-main:sidebar-map', (data: Map<string, string[]>) => {
+    useWsOn('stato-main:sidebar', (data: Map<string, string[]>) => {
       sidebarMap.value = new Map(data)
     })
 
