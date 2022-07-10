@@ -4,7 +4,7 @@ import { compileTemplate } from 'vue/compiler-sfc'
 import type { PropType, RenderFunction } from 'vue'
 import type { Story } from '../../types/index'
 
-const { defineComponent, h, ref, shallowRef, watch } = Vue
+const { defineComponent, h, shallowRef, toRaw, toRef, watch } = Vue
 
 export default defineComponent({
   name: 'StoryRenderer',
@@ -17,8 +17,12 @@ export default defineComponent({
   async setup(props) {
     const dynamic = shallowRef(defineComponent({}))
 
-    async function render() {
-      const components = props.story.components ?? {}
+    function render() {
+      // `vite-plugin-vue` will add a footer that contains `__VUE_HMR_RUNTIME__` in every component
+      // use toRaw() to get the original component object
+      const components = props.story.components
+        ? toRaw(props.story.components)
+        : {}
 
       const compiled: RenderFunction = new Function(
         'Vue',
@@ -31,6 +35,7 @@ export default defineComponent({
       )(Vue)
 
       dynamic.value = defineComponent({
+        name: 'Story',
         components,
         setup() {
           const storyProps = props.story.setup ? props.story.setup() : null
@@ -38,13 +43,8 @@ export default defineComponent({
         },
       })
     }
-    watch(
-      () => ref(props.story),
-      async () => {
-        await render()
-      },
-      { immediate: true }
-    )
+    const story = toRef(props, 'story')
+    watch(story, render, { immediate: true })
     return () => h(dynamic.value)
   },
 })

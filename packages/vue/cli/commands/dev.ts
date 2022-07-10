@@ -23,7 +23,7 @@ const bookExtMap: BookExtMap = new Map()
 
 let mainSocket: WebSocketServer | undefined
 let iframeSocket: WebSocketServer | undefined
-let statoConfig: Readonly<StatoConfig>
+let statoConfig: Readonly<StatoConfig> | undefined
 
 function getBookName(filename: string): string {
   let end = filename.indexOf('.stories.ts')
@@ -153,26 +153,41 @@ export async function dev(args: Argv) {
       await updateSidebarMap(bookName, resolve(path))
       // Store the extension for importing from app
       bookExtMap.set(bookName, ext)
-      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
+      mainSocket?.send({
+        type: 'custom',
+        event: 'stato-main:sidebar',
+        data: Array.from(sidebarMap),
+      })
     })
-    .on('change', async (path) => {
-      const filename = basename(path)
-      const bookName = getBookName(filename)
+    // .on('change', async (path) => {
+    //   const filename = basename(path)
+    //   const bookName = getBookName(filename)
 
-      console.log(`\t> update ${filename}`)
-      // Update sidebar map in case a story is added or removed
-      await updateSidebarMap(bookName, resolve(path))
-      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
-    })
+    //   console.log(`\t> update ${filename}`)
+    //   // Update sidebar map in case a story is added or removed
+    //   await updateSidebarMap(bookName, resolve(path))
+    //   mainSocket?.send({
+    //     type: 'custom',
+    //     event: 'stato-main:sidebar',
+    //     data: Array.from(sidebarMap),
+    //   })
+    // })
     .on('unlink', async (path) => {
       const filename = basename(path)
       const bookName = getBookName(filename)
       console.log(`\t> remove ${filename}`)
 
       sidebarMap.delete(bookName)
-      mainSocket?.send('stato-main:sidebar', Array.from(sidebarMap))
-
-      iframeSocket?.send('stato-iframe:book-unlinked', bookName)
+      mainSocket?.send({
+        type: 'custom',
+        event: 'stato-main:sidebar',
+        data: Array.from(sidebarMap),
+      })
+      iframeSocket?.send({
+        type: 'custom',
+        event: 'stato-iframe:book-unlinked',
+        data: bookName,
+      })
     })
 
   const iframeEnv: IframeEnv = {
@@ -193,20 +208,25 @@ export async function dev(args: Argv) {
           mainSocket = ws
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
-            ws.send('stato-main:sidebar', Array.from(sidebarMap))
+            ws.send({
+              type: 'custom',
+              event: 'stato-main:sidebar',
+              data: Array.from(sidebarMap),
+            })
           })
           ws.on(
             'stato-main:select-story',
             (data: { bookName: string; storyName: string }) => {
               // Send the required info for importing stories in client.
-              ;(iframeSocket as WebSocketServer).send(
-                'stato-iframe:select-story',
-                {
+              ;(iframeSocket as WebSocketServer).send({
+                type: 'custom',
+                event: 'stato-iframe:select-story',
+                data: {
                   bookName: data.bookName,
                   storyName: data.storyName,
                   ext: bookExtMap.get(data.bookName),
-                }
-              )
+                },
+              })
             }
           )
           iframeSocket?.on('connection', () => {
@@ -219,7 +239,6 @@ export async function dev(args: Argv) {
       open: args.open ?? false,
       port: 3700,
       watch: {
-        disableGlobbing: false,
         ignored: [resolve(__dirname, '..', 'src')],
       },
     },
@@ -239,14 +258,23 @@ export async function dev(args: Argv) {
     mode: 'development',
     root: resolve(process.cwd(), 'stato'),
     cacheDir: '../node_modules/.vite-stato/context',
-    base: statoConfig.viteOptions?.base,
-    publicDir: statoConfig.viteOptions?.publicDir
+    base: statoConfig?.viteOptions?.base,
+    publicDir: statoConfig?.viteOptions?.publicDir
       ? resolve(process.cwd(), '..', statoConfig.viteOptions.publicDir)
       : '../public',
     plugins: [
       vue(),
       {
         name: 'stato-iframe',
+        handleHotUpdate({ modules }) {
+          for (const mod of modules) {
+            if (mod.file?.endsWith('.stories.ts')) mod.isSelfAccepting = true
+          }
+          iframeSocket?.send({
+            type: 'custom',
+            event: 'stato-iframe:re-import',
+          })
+        },
         configureServer({ ws }) {
           iframeSocket = ws
         },
@@ -261,7 +289,7 @@ export async function dev(args: Argv) {
     optimizeDeps: {
       include: ['vue', 'vue/compiler-sfc'],
     },
-    css: statoConfig.viteOptions?.css,
+    css: statoConfig?.viteOptions?.css,
     build: {
       rollupOptions: {
         input: {

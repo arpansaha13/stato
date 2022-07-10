@@ -3,10 +3,10 @@ module.exports = {
     'src/components/**/*.vue',
     'src/layouts/**/*.vue',
     'src/pages/**/*.vue',
-    'src/styles/**/*',
-    'src/stories/**/*.stories.{ts,js}',
-    '.stato/style.css',
+    'src/styles/**/*.css',
+    'stato/stories/**/*.stories.{ts,js}',
     'src/App.vue',
+    'stato/style.css',
     'index.html',
   ],
 }

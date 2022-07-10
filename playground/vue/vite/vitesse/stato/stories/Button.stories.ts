@@ -1,7 +1,7 @@
 import { defineBook } from '@stato/vue'
-import Button from '../components/Button.vue'
+import Button from '../../src/components/Button.vue'
 
-const Template = (props, slot) => ({
+const Template = (props: any, slot: string) => ({
   components: { Button },
   setup() {
     return { props, slot }

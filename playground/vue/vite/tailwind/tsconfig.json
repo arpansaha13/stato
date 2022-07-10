@@ -30,7 +30,8 @@
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "stato/stories/**/*"
   ],
   "exclude": [
     "dist",
