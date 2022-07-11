@@ -2,7 +2,6 @@
 type IframeClientWsOnEvents =
   | 'stato-iframe:select-story'
   | 'stato-iframe:re-import'
-  | 'stato-iframe:book-unlinked'
 
 // Events sent by iframe client - received on iframe server
 type IframeClientWsSendEvents = ''

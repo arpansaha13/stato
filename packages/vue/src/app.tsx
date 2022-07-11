@@ -74,7 +74,7 @@ export default defineComponent({
             })()
           }
           {
-            // Overlay to prevent selection until iframe client is connected
+            // Overlay to prevent interaction until iframe client is connected
             !iframeConnected.value && <span class="sidebar-overlay" />
           }
         </aside>

@@ -11,24 +11,9 @@ const Template = (props, slot) => ({
 
 export default defineBook({
   stories: {
-    Primary: Template(
-      {
-        primary: true,
-      },
-      'Button'
-    ),
+    Primary: Template({ primary: true }, 'Button'),
     Secondary: Template(null, 'Button'),
-    Large: Template(
-      {
-        size: 'large',
-      },
-      'Button'
-    ),
-    Small: Template(
-      {
-        size: 'small',
-      },
-      'Button'
-    ),
+    Large: Template({ size: 'large' }, 'Button'),
+    Small: Template({ size: 'small' }, 'Button'),
   },
 })

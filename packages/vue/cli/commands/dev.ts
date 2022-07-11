@@ -129,7 +129,6 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
         fileName: () => 'source.mjs',
       },
       outDir,
-      emptyOutDir: false,
       rollupOptions: {
         external: ['vue'],
       },
@@ -138,8 +137,10 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
       minify: true,
     },
   })
+  // Add timestamp to force a fresh import
+  const timestamp = Date.now()
   const { default: book } = await import(
-    pathToFileURL(resolve(outDir, 'source.mjs')).href
+    `${pathToFileURL(resolve(outDir, 'source.mjs')).href}?t=${timestamp}`
   )
   sidebarMap.set(bookName, Object.keys(book.stories))
   rimraf(outDir, { disableGlob: true }, (err) => {
@@ -168,20 +169,22 @@ export async function dev(args: Argv) {
         data: Array.from(sidebarMap),
       })
     })
-    // .on('change', async (path) => {
-    //   const filename = basename(path)
-    //   const bookName = getBookName(filename)
+    .on('change', async (path) => {
+      const filename = basename(path)
+      const bookName = getBookName(filename)
 
-    //   console.log(`\t> update ${filename}`)
-    //   // Update sidebar map in case a story is added or removed
-    //   await updateSidebarMap(bookName, resolve(path))
-    //   mainSocket?.send({
-    //     type: 'custom',
-    //     event: 'stato-main:sidebar',
-    //     data: Array.from(sidebarMap),
-    //   })
-    // })
+      // Update sidebar map in case a story is added or removed
+      await updateSidebarMap(bookName, resolve(path))
+      mainSocket?.send({
+        type: 'custom',
+        event: 'stato-main:sidebar',
+        data: Array.from(sidebarMap),
+      })
+    })
     .on('unlink', async (path) => {
+      // When a book is removed, if this book was imported anytime, vite hmr will reload the page
+      // If the book was never imported, then no reload will happen
+      // Just remove the book from the sidebar
       const filename = basename(path)
       const bookName = getBookName(filename)
       console.log(`\t> remove ${filename}`)
@@ -191,11 +194,6 @@ export async function dev(args: Argv) {
         type: 'custom',
         event: 'stato-main:sidebar',
         data: Array.from(sidebarMap),
-      })
-      iframeSocket?.send({
-        type: 'custom',
-        event: 'stato-iframe:book-unlinked',
-        data: bookName,
       })
     })
 

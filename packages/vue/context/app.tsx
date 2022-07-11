@@ -50,15 +50,6 @@ export default defineComponent({
       })
     })
 
-    useWsOn('stato-iframe:book-unlinked', (bookName: string) => {
-      // If the book that is going to be unlinked, is active
-      if (activeBookName.value === bookName) {
-        activeBookName.value = null
-        activeStoryName.value = null
-        activeStory.value = {} as Story
-      }
-    })
-
     return () => (
       <main>
         <Suspense>
