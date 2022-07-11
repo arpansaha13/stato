@@ -1,14 +1,17 @@
-import { DefineComponent } from 'vue'
-import { UserConfig } from 'vite'
+import type { DefineComponent } from 'vue'
+import type { UserConfig, AliasOptions } from 'vite'
 
 export interface StatoConfig {
   /**
    * Vite config options.
    */
   viteOptions?: {
-    base: UserConfig['base']
-    css: UserConfig['css']
-    publicDir: UserConfig['publicDir']
+    resolve?: {
+      alias?: AliasOptions
+    }
+    base?: UserConfig['base']
+    css?: UserConfig['css']
+    publicDir?: UserConfig['publicDir']
   }
 }
 

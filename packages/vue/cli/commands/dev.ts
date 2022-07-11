@@ -1,6 +1,7 @@
 import { existsSync, promises } from 'fs'
 import { basename, dirname, extname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
+import { builtinModules } from 'module'
 
 import rimraf from 'rimraf'
 import chokidar from 'chokidar'
@@ -25,6 +26,65 @@ let mainSocket: WebSocketServer | undefined
 let iframeSocket: WebSocketServer | undefined
 let statoConfig: Readonly<StatoConfig> | undefined
 
+/**
+ * @returns a promise for the imported config object from stato.config
+ */
+async function getConfig() {
+  const root = process.cwd()
+
+  let resolvedPath
+  const cjsStatoConfig = resolve(root, 'stato.config.cjs')
+  const jsStatoConfig = resolve(root, 'stato.config.js')
+  const mjsStatoConfig = resolve(root, 'stato.config.mjs')
+  const tsStatoConfig = resolve(root, 'stato.config.ts')
+
+  if (existsSync(cjsStatoConfig)) resolvedPath = cjsStatoConfig
+  if (existsSync(tsStatoConfig)) resolvedPath = tsStatoConfig
+  if (existsSync(jsStatoConfig)) resolvedPath = jsStatoConfig
+  if (existsSync(mjsStatoConfig)) resolvedPath = mjsStatoConfig
+
+  if (typeof resolvedPath === 'undefined') {
+    return
+  }
+  console.log(`stato config file found: ${basename(resolvedPath)}`)
+
+  async function importConfig(resolvedPath: string): Promise<StatoConfig> {
+    return import(pathToFileURL(resolvedPath).href).then((r) => r.default ?? r)
+  }
+  let config: Readonly<StatoConfig>
+
+  if (resolvedPath === cjsStatoConfig) {
+    config = await importConfig(resolvedPath)
+  } else {
+    // compile -> import -> delete
+    const name = 'stato.config.cjs'
+    await build({
+      configFile: false,
+      root,
+      logLevel: 'error',
+      publicDir: false, // Do not copy static assets
+      build: {
+        lib: {
+          entry: resolvedPath,
+          formats: ['cjs'],
+          fileName: () => name,
+        },
+        outDir: root,
+        manifest: false,
+        emptyOutDir: false, // Must be false
+        sourcemap: false,
+        rollupOptions: {
+          // Externalise node builtin modules so that they can be used in stato config
+          external: [...builtinModules],
+        },
+      },
+    })
+    config = await importConfig(resolve(root, name))
+    await promises.unlink(resolve(root, name))
+  }
+  statoConfig = config
+}
+
 function getBookName(filename: string): string {
   let end = filename.indexOf('.stories.ts')
   if (end === -1) end = filename.indexOf('.stories.js')
@@ -34,7 +94,7 @@ function getBookName(filename: string): string {
 }
 
 /**
- * Updates the sidebar map or adds a newly bundled book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
+ * Updates the sidebar map or adds a new book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
  * @param bookName name of book
  * @param bookPath resolved path to book
  */
@@ -56,6 +116,9 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
     ],
     root: resolve(__dirname, '..'),
     logLevel: 'error',
+    resolve: {
+      alias: statoConfig?.viteOptions?.resolve?.alias,
+    },
     build: {
       lib: {
         entry: bookPath,
@@ -80,62 +143,6 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
   rimraf(outDir, { disableGlob: true }, (err) => {
     if (err) console.error(err)
   })
-}
-
-/**
- * @returns a promise for the imported config object from stato.config
- */
-async function getConfig() {
-  const root = process.cwd()
-
-  let resolvedPath
-  const cjsStatoConfig = resolve(root, 'stato.config.cjs')
-  const jsStatoConfig = resolve(root, 'stato.config.js')
-  const mjsStatoConfig = resolve(root, 'stato.config.mjs')
-  const tsStatoConfig = resolve(root, 'stato.config.ts')
-
-  if (existsSync(cjsStatoConfig)) resolvedPath = cjsStatoConfig
-  if (existsSync(tsStatoConfig)) resolvedPath = tsStatoConfig
-  if (existsSync(jsStatoConfig)) resolvedPath = jsStatoConfig
-  if (existsSync(mjsStatoConfig)) resolvedPath = mjsStatoConfig
-
-  if (typeof resolvedPath === 'undefined') {
-    console.log(`No stato config file found at ${root}`)
-    return
-  }
-
-  async function importConfig(resolvedPath: string): Promise<StatoConfig> {
-    return import(pathToFileURL(resolvedPath).href).then((r) => r.default ?? r)
-  }
-  let config: Readonly<StatoConfig>
-
-  if (resolvedPath === cjsStatoConfig) {
-    config = await importConfig(resolvedPath)
-  } else {
-    // compile -> import -> delete
-    const outDir = 'stato'
-    const name = 'stato.config.cjs'
-    await build({
-      configFile: false,
-      root,
-      logLevel: 'error',
-      publicDir: false, // Do not copy static assets
-      build: {
-        lib: {
-          entry: resolvedPath,
-          formats: ['cjs'],
-          fileName: () => name,
-        },
-        outDir,
-        manifest: false,
-        emptyOutDir: false, // Must be false
-        sourcemap: false,
-      },
-    })
-    config = await importConfig(resolve(root, outDir, name))
-    promises.unlink(resolve(root, outDir, name))
-  }
-  statoConfig = config
 }
 
 export async function dev(args: Argv) {
@@ -260,8 +267,11 @@ export async function dev(args: Argv) {
     cacheDir: '../node_modules/.vite-stato/context',
     base: statoConfig?.viteOptions?.base,
     publicDir: statoConfig?.viteOptions?.publicDir
-      ? resolve(process.cwd(), '..', statoConfig.viteOptions.publicDir)
+      ? resolve(process.cwd(), statoConfig.viteOptions.publicDir)
       : '../public',
+    resolve: {
+      alias: statoConfig?.viteOptions?.resolve?.alias,
+    },
     plugins: [
       vue(),
       {

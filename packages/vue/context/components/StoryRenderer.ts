@@ -18,8 +18,6 @@ export default defineComponent({
     const dynamic = shallowRef(defineComponent({}))
 
     function render() {
-      // `vite-plugin-vue` will add a footer that contains `__VUE_HMR_RUNTIME__` in every component
-      // use toRaw() to get the original component object
       const components = props.story.components
         ? toRaw(props.story.components)
         : {}

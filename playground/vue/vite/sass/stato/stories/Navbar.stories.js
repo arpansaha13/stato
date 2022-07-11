@@ -1,5 +1,5 @@
 import { defineBook } from '@stato/vue'
-import Navbar from '../../src/components/Navbar.vue'
+import Navbar from '@src/components/Navbar.vue'
 
 const Template = (args) => ({
   components: { Navbar },

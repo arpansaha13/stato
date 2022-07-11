@@ -1,13 +1,12 @@
 import { defineStatoConfig } from '@stato/vue'
 import { resolve } from 'path'
 
-module.exports = defineStatoConfig({
+export default defineStatoConfig({
   viteOptions: {
     resolve: {
       alias: {
-        '@src': resolve(process.cwd(), 'src'),
+        '@src': resolve(__dirname, 'src'),
       },
     },
-    publicDir: 'static',
   },
 })
