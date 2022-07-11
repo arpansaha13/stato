@@ -60,6 +60,8 @@ async function getConfig() {
     const name = 'stato.config.cjs'
     await build({
       configFile: false,
+      // Keep mode as 'development', otherwise `__VUE_HMR_RUNTIME__` becomes `undefined` (Not sure why)
+      mode: 'development',
       root,
       logLevel: 'error',
       publicDir: false, // Do not copy static assets
@@ -276,14 +278,17 @@ export async function dev(args: Argv) {
       vue(),
       {
         name: 'stato-iframe',
-        handleHotUpdate({ modules }) {
-          for (const mod of modules) {
-            if (mod.file?.endsWith('.stories.ts')) mod.isSelfAccepting = true
+        handleHotUpdate({ file, modules }) {
+          // Handle hmr for *.stories.{js,ts} files manually
+          if (file.endsWith('.stories.ts') || file.endsWith('.stories.js')) {
+            iframeSocket?.send({
+              type: 'custom',
+              event: 'stato-iframe:re-import',
+            })
+            // This file may have CSS importers registered by Tailwind JIT.
+            // Return them so that Vite can hot update them
+            return Array.from(modules[0].importers)
           }
-          iframeSocket?.send({
-            type: 'custom',
-            event: 'stato-iframe:re-import',
-          })
         },
         configureServer({ ws }) {
           iframeSocket = ws
