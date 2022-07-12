@@ -26,6 +26,22 @@ let mainSocket: WebSocketServer | undefined
 let iframeSocket: WebSocketServer | undefined
 let statoConfig: Readonly<StatoConfig> | undefined
 
+function verifyStatoDir() {
+  const statoDirPath = resolve(process.cwd(), 'stato')
+  if (!existsSync(statoDirPath)) {
+    console.error(
+      `Could not find "stato" directory in ${process.cwd()}. Run \`stato init\` to create it.`
+    )
+    process.exit(1)
+  }
+  if (!existsSync(resolve(statoDirPath, 'context.mjs'))) {
+    console.error(
+      `Could not find file "context.mjs" in ${statoDirPath}. Run \`stato init\` to create it.`
+    )
+    process.exit(1)
+  }
+}
+
 /**
  * @returns a promise for the imported config object from stato.config
  */
@@ -149,6 +165,7 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
 }
 
 export async function dev(args: Argv) {
+  verifyStatoDir()
   await getConfig()
 
   chokidar
