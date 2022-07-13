@@ -170,7 +170,12 @@ export async function dev(args: Argv) {
   await getConfig()
 
   chokidar
-    .watch('stato/stories/**/*.stories.{js,ts}') // relative to root
+    .watch('stato/stories/**/*.stories.{js,ts}' /* relative to root */, {
+      ignored: (path) => {
+        // Ignore dotfiles - https://github.com/paulmillr/chokidar/issues/47#issuecomment-17902834
+        return /(^[.#]|(?:__|~)$)/.test(basename(path))
+      },
+    })
     .on('add', async (path) => {
       const filename = basename(path)
       const bookName = getBookName(filename)
