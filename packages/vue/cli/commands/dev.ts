@@ -133,6 +133,7 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
         },
       }),
     ],
+    publicDir: false,
     root: resolve(__dirname, '..'),
     logLevel: 'error',
     resolve: {
@@ -163,6 +164,20 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
   rimraf(outDir, { disableGlob: true }, (err) => {
     if (err) console.error(err)
   })
+}
+
+function getPublicDir() {
+  if (
+    !statoConfig ||
+    !statoConfig.viteOptions ||
+    typeof statoConfig.viteOptions.publicDir === 'undefined'
+  ) {
+    return '../public'
+  }
+  if (statoConfig.viteOptions.publicDir === false) {
+    return false
+  }
+  return resolve(process.cwd(), statoConfig.viteOptions.publicDir)
 }
 
 export async function dev(args: Argv) {
@@ -289,9 +304,7 @@ export async function dev(args: Argv) {
     root: resolve(process.cwd(), 'stato'),
     cacheDir: '../node_modules/.vite-stato/context',
     base: statoConfig?.viteOptions?.base,
-    publicDir: statoConfig?.viteOptions?.publicDir
-      ? resolve(process.cwd(), statoConfig.viteOptions.publicDir)
-      : '../public',
+    publicDir: getPublicDir(),
     resolve: {
       alias: statoConfig?.viteOptions?.resolve?.alias,
     },
