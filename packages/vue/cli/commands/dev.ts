@@ -22,6 +22,7 @@ const sidebarMap: SidebarMap = new Map()
 /** Record of extensions of book modules */
 const bookExtMap: BookExtMap = new Map()
 
+// Until servers are started, the sockets will be undefined
 let mainSocket: WebSocketServer | undefined
 let iframeSocket: WebSocketServer | undefined
 let statoConfig: Readonly<StatoConfig> | undefined
@@ -253,7 +254,7 @@ export async function dev(args: Argv) {
               })
             }
           )
-          iframeSocket?.on('connection', () => {
+          iframeSocket!.on('connection', () => {
             ws.send('stato-main:iframe-connected')
           })
         },
@@ -296,7 +297,7 @@ export async function dev(args: Argv) {
         handleHotUpdate({ file, modules }) {
           // Handle hmr for *.stories.{js,ts} files manually
           if (file.endsWith('.stories.ts') || file.endsWith('.stories.js')) {
-            iframeSocket?.send({
+            iframeSocket!.send({
               type: 'custom',
               event: 'stato-iframe:re-import',
             })

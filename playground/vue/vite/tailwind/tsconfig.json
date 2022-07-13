@@ -18,6 +18,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "types": [
+      "vitest/globals",
       "vite/client",
       "vue/ref-macros",
       "vite-plugin-pages/client",
@@ -33,6 +34,7 @@
     }
   },
   "include": [
+    "__tests__",
     "src/**/*",
     "stato/stories/**/*"
   ],

@@ -2,7 +2,6 @@
   "name": "@stato/root",
   "packageManager": "pnpm@7.1.9",
   "private": true,
-  "version": "0.0.0",
   "description": "A lightweight tool for developing components in isolation.",
   "author": "Arpan Saha <https://github.com/arpansaha13>",
   "homepage": "https://github.com/arpansaha13/stato#readme",
@@ -13,7 +12,6 @@
   "bugs": {
     "url": "https://github.com/arpansaha13/stato/issues"
   },
-  "license": "ISC",
   "keywords": [
     "stato",
     "stories",
@@ -22,8 +20,16 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "clean:nm": "pnpm run -r clean:nm && if exist node_modules rd node_modules /s /q",
+    "test": "vitest run",
     "build:vue": "pnpm -F ./packages/vue build",
     "pack:vue": "cd ./packages/vue && pnpm pack"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
+    "fs-extra": "^10.1.0",
+    "playwright-chromium": "^1.23.2",
+    "typescript": "^4.7.2",
+    "vitest": "^0.18.0"
   },
   "pnpm": {
     "overrides": {

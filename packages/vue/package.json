@@ -17,8 +17,7 @@
       "import": "./dist/helpers/index.mjs",
       "require": "./dist/helpers/index.cjs",
       "types": "./dist/helpers/index.d.ts"
-    },
-    "./context": "./dist/context/iframe.mjs"
+    }
   },
   "homepage": "https://github.com/arpansaha13/stato/tree/main/packages/vue#readme",
   "repository": {
@@ -37,11 +36,11 @@
   ],
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "!dist/dev"
   ],
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "dev": "vite --open",
     "clean": "if exist dist rd dist /s /q",
     "clean:nm": "if exist node_modules rd node_modules /s /q",
     "typecheck": "vue-tsc --noEmit",

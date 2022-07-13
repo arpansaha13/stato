@@ -7,6 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "clean:nm": "if exist node_modules rd node_modules /s /q",
+    "test:stato": "stato",
     "stato": "stato --open",
     "stato:init": "stato init"
   },
