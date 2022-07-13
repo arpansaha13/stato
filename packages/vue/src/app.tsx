@@ -53,7 +53,7 @@ export default defineComponent({
                   <Disclosure as="ul" class="disclosure" key={ bookName }>
                     {
                       (() => <>
-                        { h(DisclosureButton, null, () => h('span', null, bookName)) }
+                        { h(DisclosureButton, {class: 'disclosure-button'}, () => h('p', null, bookName)) }
                         <DisclosurePanel class="disclosure-panel">
                           {
                             () => storyNames.map((storyName: string) =>

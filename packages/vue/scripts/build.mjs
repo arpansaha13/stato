@@ -1,5 +1,8 @@
 import { build as unbuild } from 'unbuild'
 import { build as esbuild } from 'esbuild'
+import { sassPlugin } from 'esbuild-sass-plugin'
+import postcss from 'postcss'
+import autoprefixer from 'autoprefixer'
 
 // CLI - esm
 await unbuild('.', false, {
@@ -81,12 +84,22 @@ for (const { format, ext } of formats) {
   })
 }
 
-// CSS for main
+// Sass and CSS for main
 await esbuild({
-  entryPoints: ['src/styles/index.css'],
+  entryPoints: ['src/styles/index.sass'],
   outfile: 'dist/src/style.css',
   bundle: true,
   minify: true,
+  plugins: [
+    sassPlugin({
+      async transform(source) {
+        const { css } = await postcss([autoprefixer]).process(source, {
+          from: undefined,
+        })
+        return css
+      },
+    }),
+  ],
 }).catch((err) => {
   console.error(err)
   process.exit(1)
