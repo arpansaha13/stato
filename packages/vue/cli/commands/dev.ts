@@ -5,47 +5,55 @@ import { builtinModules } from 'module'
 
 import rimraf from 'rimraf'
 import chokidar from 'chokidar'
-import { createServer, build } from 'vite'
+import omit from 'lodash/omit'
+import { createServer, build, normalizePath } from 'vite'
 import vue from '@vitejs/plugin-vue'
 
+// Types
 import type { Argv } from 'mri'
 import type { InlineConfig, WebSocketServer } from 'vite'
-import type { StatoConfig, IframeEnv } from '../../types'
+
+import type { StatoConfig } from '../../types'
+import type {
+  IframeEnv,
+  InitSidebarData,
+  SidebarAddUpdateData,
+  SidebarRemoveData,
+} from '../../types/devTypes'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-type SidebarMap = Map<string, string[]>
 type BookExtMap = Map<string, string>
 
-/** The table of books and stories for the sidebar */
-const sidebarMap: SidebarMap = new Map()
 /** Record of extensions of book modules */
 const bookExtMap: BookExtMap = new Map()
 
-// Until servers are started, the sockets will be undefined
-let mainSocket: WebSocketServer | undefined
-let iframeSocket: WebSocketServer | undefined
+/** A map of additions to perform to initialise the sidebar after connecting. Only new book additions will be recorded here. Book removals won't be recorded. */
+const sidebarUpdates: InitSidebarData = {
+  type: 'init sidebar',
+  data: {},
+}
+
+let mainSocket: WebSocketServer
+let iframeSocket: WebSocketServer
 let statoConfig: Readonly<StatoConfig> | undefined
 
 function verifyStatoDir() {
   const statoDirPath = resolve(process.cwd(), 'stato')
   if (!existsSync(statoDirPath)) {
     console.error(
-      `Could not find "stato" directory in ${process.cwd()}. Run \`stato init\` to create it.`
+      `Could not find "stato" directory in ${process.cwd()}. Run "stato init" to create it.`
     )
     process.exit(1)
   }
   if (!existsSync(resolve(statoDirPath, 'context.mjs'))) {
     console.error(
-      `Could not find file "context.mjs" in ${statoDirPath}. Run \`stato init\` to create it.`
+      `Could not find file "context.mjs" in ${statoDirPath}. Run "stato init" to create it.`
     )
     process.exit(1)
   }
 }
 
-/**
- * @returns a promise for the imported config object from stato.config
- */
 async function getConfig() {
   const root = process.cwd()
 
@@ -115,7 +123,7 @@ function getBookName(filename: string): string {
 /**
  * Updates the sidebar map or adds a new book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
  * @param bookName name of book
- * @param bookPath resolved path to book
+ * @param bookPath path to book relative to root
  */
 async function updateSidebarMap(bookName: string, bookPath: string) {
   // compile -> import -> delete
@@ -141,7 +149,7 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
     },
     build: {
       lib: {
-        entry: bookPath,
+        entry: resolve(bookPath),
         name: bookName,
         formats: ['es'],
         fileName: () => 'source.mjs',
@@ -155,14 +163,29 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
       minify: true,
     },
   })
+
   // Add timestamp to force a fresh import
   const timestamp = Date.now()
   const { default: book } = await import(
     `${pathToFileURL(resolve(outDir, 'source.mjs')).href}?t=${timestamp}`
   )
-  sidebarMap.set(bookName, Object.keys(book.stories))
+
+  // Remove the build result
   rimraf(outDir, { disableGlob: true }, (err) => {
     if (err) console.error(err)
+  })
+
+  const data: SidebarAddUpdateData = {
+    type: 'add/update book',
+    bookName,
+    path: normalizePath(bookPath),
+    storyNames: Object.keys(book.stories),
+  }
+  sidebarUpdates.data[normalizePath(bookPath)] = omit(data, ['type'])
+  mainSocket.send({
+    type: 'custom',
+    event: 'stato-main:sidebar',
+    data,
   })
 }
 
@@ -184,57 +207,6 @@ export async function dev(args: Argv) {
   verifyStatoDir()
   await getConfig()
 
-  chokidar
-    .watch('stato/stories/**/*.stories.{js,ts}' /* relative to root */, {
-      ignored: (path) => {
-        // Ignore dotfiles - https://github.com/paulmillr/chokidar/issues/47#issuecomment-17902834
-        return /(^[.#]|(?:__|~)$)/.test(basename(path))
-      },
-    })
-    .on('add', async (path) => {
-      const filename = basename(path)
-      const bookName = getBookName(filename)
-      const ext = extname(path)
-
-      console.log(`\t> add ${filename}`)
-      // Update sidebar map
-      await updateSidebarMap(bookName, resolve(path))
-      // Store the extension for importing from app
-      bookExtMap.set(bookName, ext)
-      mainSocket?.send({
-        type: 'custom',
-        event: 'stato-main:sidebar',
-        data: Array.from(sidebarMap),
-      })
-    })
-    .on('change', async (path) => {
-      const filename = basename(path)
-      const bookName = getBookName(filename)
-
-      // Update sidebar map in case a story is added or removed
-      await updateSidebarMap(bookName, resolve(path))
-      mainSocket?.send({
-        type: 'custom',
-        event: 'stato-main:sidebar',
-        data: Array.from(sidebarMap),
-      })
-    })
-    .on('unlink', async (path) => {
-      // When a book is removed, if this book was imported anytime, vite hmr will reload the page
-      // If the book was never imported, then no reload will happen
-      // Just remove the book from the sidebar
-      const filename = basename(path)
-      const bookName = getBookName(filename)
-      console.log(`\t> remove ${filename}`)
-
-      sidebarMap.delete(bookName)
-      mainSocket?.send({
-        type: 'custom',
-        event: 'stato-main:sidebar',
-        data: Array.from(sidebarMap),
-      })
-    })
-
   const iframeEnv: IframeEnv = {
     IFRAME_SERVER_HOST: '',
     IFRAME_SERVER_PORT: -1,
@@ -253,20 +225,21 @@ export async function dev(args: Argv) {
           mainSocket = ws
           ws.on('connection', () => {
             ws.send('stato-main:iframe-env', iframeEnv)
-            ws.send({
-              type: 'custom',
-              event: 'stato-main:sidebar',
-              data: Array.from(sidebarMap),
-            })
+            ws.send('stato-main:sidebar', sidebarUpdates)
           })
           ws.on(
             'stato-main:select-story',
-            (data: { bookName: string; storyName: string }) => {
+            (data: {
+              nesting: string[]
+              bookName: string
+              storyName: string
+            }) => {
               // Send the required info for importing stories in client.
-              ;(iframeSocket as WebSocketServer).send({
+              iframeSocket.send({
                 type: 'custom',
                 event: 'stato-iframe:select-story',
                 data: {
+                  nesting: data.nesting,
                   bookName: data.bookName,
                   storyName: data.storyName,
                   ext: bookExtMap.get(data.bookName),
@@ -274,7 +247,7 @@ export async function dev(args: Argv) {
               })
             }
           )
-          iframeSocket!.on('connection', () => {
+          iframeSocket.on('connection', () => {
             ws.send('stato-main:iframe-connected')
           })
         },
@@ -315,7 +288,7 @@ export async function dev(args: Argv) {
         handleHotUpdate({ file, modules }) {
           // Handle hmr for *.stories.{js,ts} files manually
           if (file.endsWith('.stories.ts') || file.endsWith('.stories.js')) {
-            iframeSocket!.send({
+            iframeSocket.send({
               type: 'custom',
               event: 'stato-iframe:re-import',
             })
@@ -331,9 +304,9 @@ export async function dev(args: Argv) {
     ],
     server: {
       port: 3800,
-      watch: {
-        ignored: [resolve(process.cwd(), 'stato', 'context.mjs')],
-      },
+      // watch: {
+      //   ignored: [resolve(process.cwd(), 'stato', 'context.mjs')],
+      // },
     },
     optimizeDeps: {
       include: ['vue', 'vue/compiler-sfc'],
@@ -373,4 +346,50 @@ export async function dev(args: Argv) {
     console.error(`error when starting dev server:\n${e.stack}`)
     process.exit(1)
   }
+
+  chokidar
+    .watch('stato/stories/**/*.stories.{js,ts}' /* relative to root */, {
+      ignored: (path) => {
+        // Ignore dotfiles - https://github.com/paulmillr/chokidar/issues/47#issuecomment-17902834
+        return /(^[.#]|(?:__|~)$)/.test(basename(path))
+      },
+    })
+    .on('add', async (path) => {
+      const filename = basename(path)
+      const bookName = getBookName(filename)
+      const ext = extname(path)
+
+      console.log(`\t> add ${filename}`)
+      // Update sidebar map
+      await updateSidebarMap(bookName, path)
+      // Store the extension for importing from app
+      bookExtMap.set(bookName, ext)
+    })
+    .on('change', async (path) => {
+      const filename = basename(path)
+      const bookName = getBookName(filename)
+
+      // Update sidebar map in case a story is added or removed
+      await updateSidebarMap(bookName, path)
+    })
+    .on('unlink', async (path) => {
+      // When a book is removed, if this book was imported anytime, vite hmr will reload the page
+      // If the book was never imported, then no reload will happen
+      // Just remove the book from the sidebar
+      const filename = basename(path)
+      const bookName = getBookName(filename)
+      console.log(`\t> remove ${filename}`)
+
+      const data: SidebarRemoveData = {
+        type: 'remove book',
+        path,
+        bookName,
+      }
+      delete sidebarUpdates.data[normalizePath(path)]
+      mainSocket.send({
+        type: 'custom',
+        event: 'stato-main:sidebar',
+        data,
+      })
+    })
 }

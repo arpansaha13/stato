@@ -1,40 +1,60 @@
-// `h` and `Fragment` have to be imported for jsx transform
-import { defineComponent, h, ref, Fragment, shallowRef } from 'vue'
+// `h` has to be imported for jsx transform
+import { defineComponent, h, ref, provide, reactive } from 'vue'
+
+// Types
+import type { BookDirMap, IframeEnv, InitSidebarData, SidebarAddUpdateData, SidebarRemoveData } from '../types/devTypes'
+// Components
+import Sidebar from './components/BookDir'
+// Composables and Utils
 import { useHResize } from './composables/useHResize'
 import { useWsOn, useWsSend } from './composables/useWs'
-import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-import { sentenceCase } from 'change-case'
-
-import type { IframeEnv } from '../types'
+import { addUpdateBook, initSidebar, removeBook } from './utils/sidebar'
+// Injection keys
+import { InjectActiveStoryKey, InjectSelectStoryFn } from './symbols'
 
 export default defineComponent({
   setup() {
-    const activeStoryMapKey = ref('')
-    const sidebarMap = shallowRef(new Map<string, string[]>())
+    const activeStoryKey = ref('')
+    const sidebarMap = reactive<BookDirMap>(new Map())
     const iframeURL = ref<string | null>(null)
     const iframeConnected = ref(false)
 
     useWsOn('stato-main:iframe-env', (iframeEnv: IframeEnv) => {
       iframeURL.value = `http://${iframeEnv.IFRAME_SERVER_HOST}:${iframeEnv.IFRAME_SERVER_PORT}`
     })
-
-    useWsOn('stato-main:sidebar', (data: Map<string, string[]>) => {
-      sidebarMap.value = new Map(data)
+    useWsOn('stato-main:sidebar', (data: InitSidebarData | SidebarAddUpdateData | SidebarRemoveData) => {
+      switch (data.type) {
+        case 'init sidebar':
+          initSidebar(data.data, sidebarMap)
+          break
+        case 'add/update book':
+          addUpdateBook(data, sidebarMap)
+          break
+        case 'remove book':
+          removeBook(data, sidebarMap)
+          break
+        default:
+          console.warn('Invalid sidebar update type')
+      }
     })
 
     useWsOn('stato-main:iframe-connected', () => {
       iframeConnected.value = true
     })
 
-    function selectStory(bookName: string, storyName: string) {
+    function selectStory(nesting: string[], bookName: string, storyName: string) {
       return () => {
-        const newKey = `${bookName}/${storyName}`
-        if (activeStoryMapKey.value !== newKey) {
-          activeStoryMapKey.value = newKey
-          useWsSend('stato-main:select-story', { bookName, storyName })
+        let newKey = `${bookName}/${storyName}`
+        if (nesting.length) newKey = `${nesting.join('/')}/${newKey}`
+        if (activeStoryKey.value !== newKey) {
+          activeStoryKey.value = newKey
+          useWsSend('stato-main:select-story', { nesting, bookName, storyName })
         }
       }
     }
+
+    provide(InjectActiveStoryKey, activeStoryKey)
+    provide(InjectSelectStoryFn, selectStory)
 
     const style = useHResize(
       'target',
@@ -46,36 +66,8 @@ export default defineComponent({
       <div class="container">
         <aside ref="target" class="sidebar" style={ style.value }>
           {
-            (() => {
-              const books = []
-              for (const [ bookName, storyNames ] of sidebarMap.value) {
-                books.push(
-                  <Disclosure as="ul" class="disclosure" key={ bookName }>
-                    {
-                      (() => <>
-                        { h(DisclosureButton, {class: 'disclosure-button'}, () => h('p', null, bookName)) }
-                        <DisclosurePanel class="disclosure-panel">
-                          {
-                            () => storyNames.map((storyName: string) =>
-                              <li class={`disclosure-panel-item ${ activeStoryMapKey.value === bookName + '/' + storyName ? 'disclosure-panel-item-active' : '' }`} key={ storyName }>
-                                <button onClick={ selectStory(bookName, storyName) }>
-                                  { sentenceCase(storyName) }
-                                </button>
-                              </li>
-                            )
-                          }
-                        </DisclosurePanel>
-                      </>)
-                    }
-                  </Disclosure>
-                )
-              }
-              return books
-            })()
-          }
-          {
-            // Overlay to prevent interaction until iframe client is connected
-            !iframeConnected.value && <span class="sidebar-overlay" />
+            // Render sidebar after iframe client is connected
+            iframeConnected.value ? <Sidebar nesting={ [] } bookDirMap={ sidebarMap } /> : null
           }
         </aside>
         <main class="workspace">

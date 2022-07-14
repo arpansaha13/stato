@@ -15,34 +15,41 @@ export default defineComponent({
     const activeStoryName = ref<string | null>(null)
     const activeBook = ref<Book | null>(null)
     const activeStory = shallowRef({}) as ShallowRef<Story>
+    const activePath = ref<string | null>(null)
 
     interface StoryData {
+      nesting: string[],
       bookName: string
       storyName: string
       ext: BookExt
     }
-    async function getBook(bookName: string, ext: BookExt): Promise<{default: Book}> {
+    async function getBook(): Promise<{default: Book}> {
       // Add timestamp so that browser sends request back to server instead of loading from cache
       const timestamp = Date.now()
-      if (ext === '.js')
-        return import(`./stories/${bookName}.stories.js?t=${timestamp}`)
-      // if (ext === 'ts')
-      return import(`./stories/${bookName}.stories.ts?t=${timestamp}`)
+      let segment = activeBookName.value
+      if (activePath.value) segment = `${activePath.value}/${segment}`
+
+      if (activeBookExt.value === '.js')
+        return import(`./stories/${segment}.stories.js?t=${timestamp}`)
+      // if (activeBookExt.value === 'ts')
+      return import(`./stories/${segment}.stories.ts?t=${timestamp}`)
     }
-    useWsOn('stato-iframe:select-story', async ({ bookName, storyName, ext }: StoryData) => {
-      if (activeBookName.value !== bookName) {
-        const { default: book } = await getBook(bookName, ext)
-        activeBook.value = book
+    useWsOn('stato-iframe:select-story', async ({ nesting, bookName, storyName, ext }: StoryData) => {
+      const path = nesting.join('/')
+      if (activePath.value !== path || activeBookName.value !== bookName) {
+        activePath.value = path
         activeBookExt.value = ext
         activeBookName.value = bookName
+        const { default: book } = await getBook()
+        activeBook.value = book
       }
       activeStoryName.value = storyName
       activeStory.value = (activeBook.value as Book).stories[storyName]
     })
 
     useWsOn('stato-iframe:re-import', async () => {
-      if (activeBookName.value === null || activeBookExt.value === null) return
-      const { default: book } = await getBook(activeBookName.value, activeBookExt.value)
+      if (activeBookName.value === null) return
+      const { default: book } = await getBook()
       activeBook.value = book
       activeStory.value = {} as Story
       nextTick(() => {
