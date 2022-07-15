@@ -15,7 +15,7 @@ import {
 } from '@heroicons/vue/solid'
 import { ChevronDownIcon, ChevronRightIcon } from '@heroicons/vue/outline'
 // Utils
-import { getBookName } from '../../utils/getBookName'
+import { getBookName } from '../utils/getBookName'
 // Injection Keys
 import { InjectActiveStoryKey, InjectSelectStoryFn } from '../symbols'
 

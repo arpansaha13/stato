@@ -8,7 +8,7 @@ import Sidebar from './components/BookDir'
 // Composables and Utils
 import { useHResize } from './composables/useHResize'
 import { useWsOn, useWsSend } from './composables/useWs'
-import { addUpdateBook, initSidebar, removeBook } from '../utils/sidebar'
+import { addUpdateBook, initSidebar, removeBook } from './utils/sidebar'
 // Injection keys
 import { InjectActiveStoryKey, InjectSelectStoryFn } from './symbols'
 

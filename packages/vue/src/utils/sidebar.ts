@@ -3,7 +3,7 @@ import type {
   BookDirMap,
   SidebarAddUpdateData,
   SidebarRemoveData,
-} from '../types/devTypes'
+} from '../../types/devTypes'
 
 /** Initialise the sidebar after connecting */
 export function initSidebar(

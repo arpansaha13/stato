@@ -2,14 +2,13 @@ import { existsSync, promises } from 'fs'
 import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
+import { createHash } from 'crypto'
 
 import rimraf from 'rimraf'
 import chokidar from 'chokidar'
 import omit from 'lodash/omit'
 import { createServer, build, normalizePath } from 'vite'
 import vue from '@vitejs/plugin-vue'
-
-import { getBookName } from '../../utils/getBookName'
 
 // Types
 import type { Argv } from 'mri'
@@ -115,9 +114,9 @@ async function getConfig() {
  * @param filePath path to file relative to root
  */
 async function updateSidebarMap(fileName: string, filePath: string) {
-  const bookName = getBookName(fileName)
+  const hash = createHash('md5').update(filePath).digest('base64')
   // compile -> import -> delete
-  const outDir = resolve(__dirname, '..', 'dev', bookName)
+  const outDir = resolve(__dirname, '..', 'dev', hash)
   await build({
     configFile: false,
     mode: 'development',
@@ -140,7 +139,6 @@ async function updateSidebarMap(fileName: string, filePath: string) {
     build: {
       lib: {
         entry: resolve(filePath),
-        name: bookName,
         formats: ['es'],
         fileName: () => 'source.mjs',
       },
@@ -345,27 +343,21 @@ export async function dev(args: Argv) {
     })
     .on('add', async (path) => {
       const fileName = basename(path)
-
-      console.log(
-        `\t> add ${normalizePath(path).split('/').slice(2).join('/')}`
-      )
-      // Update sidebar map
+      const truncFilePath = normalizePath(path).split('/').slice(2).join('/') // Remove 'stato/stories'
+      console.log(`\t> add ${truncFilePath}`)
       await updateSidebarMap(fileName, path)
     })
     .on('change', async (path) => {
       const fileName = basename(path)
-
-      // Update sidebar map in case a story is added or removed
-      await updateSidebarMap(fileName, path)
+      await updateSidebarMap(fileName, path) // In case a story is added or removed
     })
     .on('unlink', async (path) => {
       // When a book is removed, if this book was imported anytime, vite hmr will reload the page
       // If the book was never imported, then no reload will happen
       // Just remove the book from the sidebar
       const fileName = basename(path)
-      console.log(
-        `\t> remove ${normalizePath(path).split('/').slice(2).join('/')}`
-      )
+      const truncFilePath = normalizePath(path).split('/').slice(2).join('/') // Remove 'stato/stories'
+      console.log(`\t> remove ${truncFilePath}`)
 
       const data: SidebarRemoveData = {
         type: 'remove book',
