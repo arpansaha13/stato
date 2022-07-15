@@ -7,7 +7,9 @@ import type { PropType } from 'vue'
 import type { BookDirMap } from '../../types/devTypes'
 // Components
 import { Disclosure, DisclosureButton, DisclosurePanel } from '@headlessui/vue'
-
+// Utils
+import { getBookName } from '../../utils/getBookName'
+// Injection Keys
 import { InjectActiveStoryKey, InjectSelectStoryFn } from '../symbols'
 
 const BookDir = defineComponent({
@@ -28,28 +30,28 @@ const BookDir = defineComponent({
     const activeStoryKey = inject(InjectActiveStoryKey)!
     const selectStory = inject(InjectSelectStoryFn)!
 
-    const books = shallowRef<JSX.Element[]>([])
-
     function render() {
-      for (const [ bookOrDirName, bookDirOrStoryNames ] of props.bookDirMap) {
+      const books = shallowRef<JSX.Element[]>([])
+
+      for (const [ fileOrDirName, bookDirOrStoryNames ] of props.bookDirMap) {
         books.value.push(
-          <Disclosure as="ul" class="disclosure" key={ bookOrDirName }>
+          <Disclosure as="ul" class="disclosure" key={ fileOrDirName }>
             {
               () => <>
                 <DisclosureButton class="disclosure-button">
-                  { () => <p>{ bookOrDirName }</p> }
+                  { () => <p>{ bookDirOrStoryNames instanceof Map ? fileOrDirName : getBookName(fileOrDirName) }</p> }
                 </DisclosureButton>
                 <DisclosurePanel class="disclosure-panel">
                   {
                     () => (
                       bookDirOrStoryNames instanceof Map
-                      ? <BookDir nesting={ [...props.nesting, bookOrDirName] } bookDirMap={ bookDirOrStoryNames } />
+                      ? <BookDir nesting={ [...props.nesting, fileOrDirName] } bookDirMap={ bookDirOrStoryNames } />
                       : bookDirOrStoryNames.map((storyName: string) => {
-                        let currentStoryKey = `${bookOrDirName}/${storyName}`
+                        let currentStoryKey = `${fileOrDirName}/${storyName}`
                         if (props.nesting.length) currentStoryKey = `${props.nesting.join('/')}/${currentStoryKey}`
 
                         return <li class={`disclosure-panel-item ${ activeStoryKey.value === currentStoryKey ? 'disclosure-panel-item-active' : '' }`} key={ storyName }>
-                          <button onClick={ selectStory(props.nesting, bookOrDirName, storyName) }>
+                          <button onClick={ selectStory(props.nesting, fileOrDirName, storyName) }>
                             { sentenceCase(storyName) }
                           </button>
                         </li>

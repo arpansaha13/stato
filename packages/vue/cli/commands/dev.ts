@@ -1,5 +1,5 @@
 import { existsSync, promises } from 'fs'
-import { basename, dirname, extname, resolve } from 'path'
+import { basename, dirname, resolve } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { builtinModules } from 'module'
 
@@ -8,6 +8,8 @@ import chokidar from 'chokidar'
 import omit from 'lodash/omit'
 import { createServer, build, normalizePath } from 'vite'
 import vue from '@vitejs/plugin-vue'
+
+import { getBookName } from '../../utils/getBookName'
 
 // Types
 import type { Argv } from 'mri'
@@ -22,11 +24,6 @@ import type {
 } from '../../types/devTypes'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-
-type BookExtMap = Map<string, string>
-
-/** Record of extensions of book modules */
-const bookExtMap: BookExtMap = new Map()
 
 /** A map of additions to perform to initialise the sidebar after connecting. Only new book additions will be recorded here. Book removals won't be recorded. */
 const sidebarUpdates: InitSidebarData = {
@@ -57,7 +54,7 @@ function verifyStatoDir() {
 async function getConfig() {
   const root = process.cwd()
 
-  let resolvedPath
+  let resolvedPath: string | undefined
   const cjsStatoConfig = resolve(root, 'stato.config.cjs')
   const jsStatoConfig = resolve(root, 'stato.config.js')
   const mjsStatoConfig = resolve(root, 'stato.config.mjs')
@@ -112,20 +109,13 @@ async function getConfig() {
   statoConfig = config
 }
 
-function getBookName(filename: string): string {
-  let end = filename.indexOf('.stories.ts')
-  if (end === -1) end = filename.indexOf('.stories.js')
-  if (end === -1) end = filename.indexOf('.stories.mjs')
-  if (end === -1) end = filename.indexOf('.stories.cjs')
-  return filename.substring(0, end)
-}
-
 /**
  * Updates the sidebar map or adds a new book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
- * @param bookName name of book
- * @param bookPath path to book relative to root
+ * @param fileName
+ * @param filePath path to file relative to root
  */
-async function updateSidebarMap(bookName: string, bookPath: string) {
+async function updateSidebarMap(fileName: string, filePath: string) {
+  const bookName = getBookName(fileName)
   // compile -> import -> delete
   const outDir = resolve(__dirname, '..', 'dev', bookName)
   await build({
@@ -149,7 +139,7 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
     },
     build: {
       lib: {
-        entry: resolve(bookPath),
+        entry: resolve(filePath),
         name: bookName,
         formats: ['es'],
         fileName: () => 'source.mjs',
@@ -177,11 +167,11 @@ async function updateSidebarMap(bookName: string, bookPath: string) {
 
   const data: SidebarAddUpdateData = {
     type: 'add/update book',
-    bookName,
-    path: normalizePath(bookPath),
+    fileName,
+    path: normalizePath(filePath),
     storyNames: Object.keys(book.stories),
   }
-  sidebarUpdates.data[normalizePath(bookPath)] = omit(data, ['type'])
+  sidebarUpdates.data[normalizePath(filePath)] = omit(data, ['type'])
   mainSocket.send({
     type: 'custom',
     event: 'stato-main:sidebar',
@@ -231,7 +221,7 @@ export async function dev(args: Argv) {
             'stato-main:select-story',
             (data: {
               nesting: string[]
-              bookName: string
+              fileName: string
               storyName: string
             }) => {
               // Send the required info for importing stories in client.
@@ -240,9 +230,8 @@ export async function dev(args: Argv) {
                 event: 'stato-iframe:select-story',
                 data: {
                   nesting: data.nesting,
-                  bookName: data.bookName,
+                  fileName: data.fileName,
                   storyName: data.storyName,
-                  ext: bookExtMap.get(data.bookName),
                 },
               })
             }
@@ -355,35 +344,33 @@ export async function dev(args: Argv) {
       },
     })
     .on('add', async (path) => {
-      const filename = basename(path)
-      const bookName = getBookName(filename)
-      const ext = extname(path)
+      const fileName = basename(path)
 
-      console.log(`\t> add ${filename}`)
+      console.log(
+        `\t> add ${normalizePath(path).split('/').slice(2).join('/')}`
+      )
       // Update sidebar map
-      await updateSidebarMap(bookName, path)
-      // Store the extension for importing from app
-      bookExtMap.set(bookName, ext)
+      await updateSidebarMap(fileName, path)
     })
     .on('change', async (path) => {
-      const filename = basename(path)
-      const bookName = getBookName(filename)
+      const fileName = basename(path)
 
       // Update sidebar map in case a story is added or removed
-      await updateSidebarMap(bookName, path)
+      await updateSidebarMap(fileName, path)
     })
     .on('unlink', async (path) => {
       // When a book is removed, if this book was imported anytime, vite hmr will reload the page
       // If the book was never imported, then no reload will happen
       // Just remove the book from the sidebar
-      const filename = basename(path)
-      const bookName = getBookName(filename)
-      console.log(`\t> remove ${filename}`)
+      const fileName = basename(path)
+      console.log(
+        `\t> remove ${normalizePath(path).split('/').slice(2).join('/')}`
+      )
 
       const data: SidebarRemoveData = {
         type: 'remove book',
-        path,
-        bookName,
+        path: normalizePath(path),
+        fileName,
       }
       delete sidebarUpdates.data[normalizePath(path)]
       mainSocket.send({

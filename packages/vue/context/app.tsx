@@ -10,8 +10,7 @@ type BookExt = '.js' | '.ts'
 
 export default defineComponent({
   setup() {
-    const activeBookName = ref<string | null>(null)
-    const activeBookExt = ref<BookExt | null>(null)
+    const activeFileName = ref<string | null>(null)
     const activeStoryName = ref<string | null>(null)
     const activeBook = ref<Book | null>(null)
     const activeStory = shallowRef({}) as ShallowRef<Story>
@@ -19,27 +18,30 @@ export default defineComponent({
 
     interface StoryData {
       nesting: string[],
-      bookName: string
+      fileName: string
       storyName: string
-      ext: BookExt
     }
     async function getBook(): Promise<{default: Book}> {
       // Add timestamp so that browser sends request back to server instead of loading from cache
       const timestamp = Date.now()
-      let segment = activeBookName.value
+      let segment = activeFileName.value
       if (activePath.value) segment = `${activePath.value}/${segment}`
 
-      if (activeBookExt.value === '.js')
-        return import(`./stories/${segment}.stories.js?t=${timestamp}`)
-      // if (activeBookExt.value === 'ts')
+      // Remove the file ext from the segment
+      const temp = segment!.split('.')
+      const ext = temp.pop() as ('js' | 'ts')
+      segment = temp.join('.')
+
+      if (ext === 'js')
+        return import(`./stories/${segment}.js?t=${timestamp}`)
+      // if (ext === 'ts')
       return import(`./stories/${segment}.stories.ts?t=${timestamp}`)
     }
-    useWsOn('stato-iframe:select-story', async ({ nesting, bookName, storyName, ext }: StoryData) => {
+    useWsOn('stato-iframe:select-story', async ({ nesting, fileName, storyName }: StoryData) => {
       const path = nesting.join('/')
-      if (activePath.value !== path || activeBookName.value !== bookName) {
+      if (activePath.value !== path || activeFileName.value !== fileName) {
         activePath.value = path
-        activeBookExt.value = ext
-        activeBookName.value = bookName
+        activeFileName.value = fileName
         const { default: book } = await getBook()
         activeBook.value = book
       }
@@ -48,7 +50,7 @@ export default defineComponent({
     })
 
     useWsOn('stato-iframe:re-import', async () => {
-      if (activeBookName.value === null) return
+      if (activeFileName.value === null) return
       const { default: book } = await getBook()
       activeBook.value = book
       activeStory.value = {} as Story

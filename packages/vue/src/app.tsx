@@ -8,7 +8,7 @@ import Sidebar from './components/BookDir'
 // Composables and Utils
 import { useHResize } from './composables/useHResize'
 import { useWsOn, useWsSend } from './composables/useWs'
-import { addUpdateBook, initSidebar, removeBook } from './utils/sidebar'
+import { addUpdateBook, initSidebar, removeBook } from '../utils/sidebar'
 // Injection keys
 import { InjectActiveStoryKey, InjectSelectStoryFn } from './symbols'
 
@@ -42,13 +42,13 @@ export default defineComponent({
       iframeConnected.value = true
     })
 
-    function selectStory(nesting: string[], bookName: string, storyName: string) {
+    function selectStory(nesting: string[], fileName: string, storyName: string) {
       return () => {
-        let newKey = `${bookName}/${storyName}`
+        let newKey = `${fileName}/${storyName}`
         if (nesting.length) newKey = `${nesting.join('/')}/${newKey}`
         if (activeStoryKey.value !== newKey) {
           activeStoryKey.value = newKey
-          useWsSend('stato-main:select-story', { nesting, bookName, storyName })
+          useWsSend('stato-main:select-story', { nesting, fileName, storyName })
         }
       }
     }

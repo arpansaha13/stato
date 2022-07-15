@@ -4,14 +4,14 @@ export interface SidebarAddUpdateData {
   type: 'add/update book'
   /** path to book relative to root */
   path: string
-  bookName: string
+  fileName: string
   storyNames: string[]
 }
 export interface SidebarRemoveData {
   type: 'remove book'
   /** path to book relative to root */
   path: string
-  bookName: string
+  fileName: string
 }
 export interface InitSidebarData {
   type: 'init sidebar'
