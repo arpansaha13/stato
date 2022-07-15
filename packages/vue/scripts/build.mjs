@@ -3,6 +3,7 @@ import { build as esbuild } from 'esbuild'
 import { sassPlugin } from 'esbuild-sass-plugin'
 import postcss from 'postcss'
 import autoprefixer from 'autoprefixer'
+import tailwindcss from 'tailwindcss'
 
 // CLI - esm
 await unbuild('.', false, {
@@ -93,9 +94,12 @@ await esbuild({
   plugins: [
     sassPlugin({
       async transform(source) {
-        const { css } = await postcss([autoprefixer]).process(source, {
-          from: undefined,
-        })
+        const { css } = await postcss([autoprefixer, tailwindcss]).process(
+          source,
+          {
+            from: undefined,
+          }
+        )
         return css
       },
     }),

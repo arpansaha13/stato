@@ -1,0 +1,33 @@
+.container
+  --resize-handle-width: 4px
+  --resize-handle-hover-color: #3b82f6
+
+  @apply flex w-screen h-screen overflow-hidden
+
+.workspace
+  // Keep space for the resize handler
+  padding-left: var(--resize-handle-width)
+  @apply relative h-full flex-grow
+
+.screen
+  @apply w-full h-full relative
+
+.resize-handle
+  width: var(--resize-handle-width)
+  background-color: var(--sidebar-bgcolor)
+  transition-property: background-color
+  transition-duration: 300ms
+  transition-delay: 300ms
+  @apply h-full absolute top-0 left-0 cursor-ew-resize
+
+.resize-handle:hover,
+.resize-handle:active
+  background-color: var(--resize-handle-hover-color)
+
+.resize-overlay
+  // should cover entire iframe
+  @apply absolute inset-0
+
+#stato-iframe
+  // iframes are inline by default and have a border
+  @apply block border-none w-full h-full

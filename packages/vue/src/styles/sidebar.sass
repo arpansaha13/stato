@@ -1,0 +1,55 @@
+.sidebar
+  // gray-100
+  --sidebar-bgcolor: #f3f4f6
+  // gray-900
+  --sidebar-button-color: #111827
+  // gray-200
+  --sidebar-button-hover-bgcolor: #e5e7eb
+  // gray-300
+  --sidebar-button-active-bgcolor: #d1d5db
+  // sky-500
+  --sidebar-button-focus-outline: #0ea5e9
+  // sky-500/50
+  --sidebar-button-focus-bgcolor: #0ea5e950
+  // gray-900
+  --sidebar-button-focus-color: #111827
+
+  // width of sidebar is handled by inline styles returned by useHResize()
+  font-size: 14px
+  background-color: var(--sidebar-bgcolor)
+  // box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)
+  @apply h-full overflow-auto relative py-2
+
+  .disclosure-panel
+    padding-left: 1.2rem // 1 + 0.2 (icon + icon-margin)
+
+  .disclosure-button,
+  .disclosure-panel-item > button
+    color: var(--sidebar-button-color)
+    @apply block w-full text-left text-ellipsis whitespace-nowrap overflow-hidden
+
+    &:hover
+      background-color: var(--sidebar-button-hover-bgcolor)
+
+    &:focus
+      outline: solid 1px var(--sidebar-button-focus-outline)
+      background-color: var(--sidebar-button-focus-bgcolor)
+      color: var(--sidebar-button-focus-color)
+
+  .disclosure-panel-item.disclosure-panel-item-active > button:not(:focus)
+    background-color: var(--sidebar-button-active-bgcolor)
+
+  .disclosure-button-content
+    @apply flex items-center
+
+  .disclosure-button-icon
+    @apply flex-shrink-0 mr-[0.2rem] w-4 h-4
+
+    &.story-icon
+      @apply text-rose-500
+
+    &.book-icon
+      @apply text-green-500
+
+    &.bookdir-icon
+      @apply text-gray-600
