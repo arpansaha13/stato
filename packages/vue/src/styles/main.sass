@@ -8,7 +8,6 @@
   --resize-handle-hover-color: #3b82f6
 
   --sidebar-bgcolor: #e5e5e5
-  --sidebar-overlay-color: #e5e5e560
   --sidebar-button-hover-color: #d6d3d1
   --sidebar-button-active-bgcolor: #a3a3a370
   --sidebar-button-focus-outline: #38bdf8
@@ -19,11 +18,13 @@
   position: relative
   height: 100%
   flex-grow: 1
+  // Keep space for the resize handler
   padding-left: var(--resize-handle-width)
 
 .screen
   width: 100%
   height: 100%
+  position: relative
 
 .resize-handle
   position: absolute
@@ -41,6 +42,11 @@
 .resize-handle:active
   background-color: var(--resize-handle-hover-color)
 
+.resize-overlay
+  // should cover entire iframe
+  position: absolute
+  inset: 0
+
 #stato-iframe
   display: block // iframes are inline by default
   border: none // Reset default border
@@ -48,6 +54,7 @@
   width: 100%
 
 .sidebar
+  // width of sidebar is handled by inline styles returned by useHResize()
   height: 100%
   overflow: auto
   position: relative
@@ -56,12 +63,6 @@
   background-color: var(--sidebar-bgcolor)
   box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)
   // min-width: fit-content
-
-  &-overlay
-    position: absolute
-    z-index: 10
-    inset: 0
-    background-color: var(--sidebar-overlay-color)
 
   .disclosure-panel
     padding-left: 0.5rem

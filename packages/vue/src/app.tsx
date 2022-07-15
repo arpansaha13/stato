@@ -56,7 +56,7 @@ export default defineComponent({
     provide(InjectActiveStoryKey, activeStoryKey)
     provide(InjectSelectStoryFn, selectStory)
 
-    const style = useHResize(
+    const resize = useHResize(
       'target',
       { ref: 'handler', direction: 'normal' },
       { min: '6rem', initial: '16rem', max: '32rem' }
@@ -64,7 +64,7 @@ export default defineComponent({
 
     return () => (
       <div class="container">
-        <aside ref="target" class="sidebar" style={ style.value }>
+        <aside ref="target" class="sidebar" style={ resize.style.value }>
           {
             // Render sidebar after iframe client is connected
             iframeConnected.value ? <Sidebar nesting={ [] } bookDirMap={ sidebarMap } /> : null
@@ -75,6 +75,10 @@ export default defineComponent({
           {
             iframeURL.value !== null &&
             <div class="screen">
+              {
+                // Put a transparent overlay so that the mouse pointer remains in same document during resizing.
+                resize.resizing.value ? <span class="resize-overlay"></span> : null
+              }
               <iframe src={ iframeURL.value } id="stato-iframe" title="Stato iframe for rendering stories in isolation" />
             </div>
           }

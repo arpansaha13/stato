@@ -11,6 +11,12 @@ import {
 
 interface ResizeHandler {
   ref: Ref<HTMLElement | SVGElement> | string
+  /**
+   * Invert the direction in which the resizing happens.
+   *
+   * @default
+   * 'normal'
+   */
   direction?: 'normal' | 'inverted'
 }
 
@@ -23,6 +29,12 @@ interface ResizeRange {
   min?: string
   max?: string
   initial?: string
+}
+
+/** The return value of useHResize() */
+interface ResizeReturn {
+  resizing: Ref<boolean>
+  style: Ref<CSSProperties>
 }
 
 /**
@@ -41,6 +53,7 @@ function resolveHandlers(
   if (Array.isArray(handlers)) {
     temp = [...handlers]
   } else if (typeof handlers === 'object' && handlers !== null) {
+    // Put the single handler inside an array so that the loops can work
     temp = [handlers]
   } else {
     temp = null
@@ -56,7 +69,11 @@ function resolveHandlers(
 }
 
 /**
- * Resize an element horizontally.
+ * Resize an element horizontally. It returns a style ref object which can be used as inline styles on the target.
+ *
+ * If the resizing does not work properly check for conflicting css.
+ * Also ensure that the mouse pointer is in the same document during the resize.
+ * For example if there is an iframe, then the mouse pointer won't be in the same document.
  * @param target template ref, or just the ref string, of the element which is to be resized.
  * @param handlers a single resize handler or an array of handlers
  * @param range initial width, min-width and max-width as css values.
@@ -67,14 +84,14 @@ export function useHResize(
   handlers: ResizeHandler | ResizeHandler[],
   range?: ResizeRange,
   sensitivity: number = 1
-): Ref<CSSProperties> {
+): ResizeReturn {
   const el = resolveTemplateRef(target) as Ref<HTMLElement>
 
   const h = resolveHandlers(handlers)
 
   if (h === null) {
-    console.error('Invalid handler(s)')
-    return ref({})
+    console.error('useHResize: Invalid handler(s)')
+    return { resizing: ref(false), style: ref({}) }
   }
 
   // Detect dragging of handler
@@ -89,6 +106,7 @@ export function useHResize(
     useEventListener(handler.ref, 'mousedown', () => {
       resizing.value = true
       handlerDirection.value = handler.direction ?? 'normal'
+      // Prevent text selection during resize
       window.addEventListener('selectstart', disableSelection)
     })
   }
@@ -133,11 +151,13 @@ export function useHResize(
   })
 
   whenever(resizing, () => {
+    // Take a snap of mouses-x value when resizing starts.
     xSnap.value = x.value
     currentWidth = el.value.offsetWidth
     resume()
   })
+  // Pause when resizing stops. At start it should always be paused.
   whenever(logicNot(resizing), pause, { immediate: true })
 
-  return style
+  return { resizing, style }
 }
