@@ -1,24 +1,15 @@
 .wrapper {
+  @apply flex items-center justify-between;
   font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   padding: 15px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 h1 {
-  font-weight: 900;
-  font-size: 20px;
-  line-height: 1;
-  margin: 6px 0 6px 10px;
-  display: inline-block;
-  vertical-align: top;
+  @apply ml-2.5 my-1.5 inline-block font-black text-[20px] leading-4 align-top;
 }
 button + button {
-  margin-left: 10px;
+  @apply ml-2.5;
 }
 .welcome {
-  color: #333;
-  font-size: 14px;
-  margin-right: 10px;
+  @apply mr-2.5 text-[14px] text-gray-800;
 }

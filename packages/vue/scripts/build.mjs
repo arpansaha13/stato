@@ -1,3 +1,5 @@
+import { builtinModules } from 'node:module'
+
 import { build as unbuild } from 'unbuild'
 import { build as esbuild } from 'esbuild'
 import { sassPlugin } from 'esbuild-sass-plugin'
@@ -16,14 +18,7 @@ await unbuild('.', false, {
   entries: ['cli/index'],
   outDir: 'dist/cli',
   dependencies: ['vue', 'vite', '@vitejs/plugin-vue'],
-  externals: [
-    'node:fs',
-    'node:url',
-    'node:buffer',
-    'node:child_process',
-    'node:process',
-    'node:path',
-  ],
+  externals: [...builtinModules],
 }).catch((err) => {
   console.error(err)
   process.exit(1)

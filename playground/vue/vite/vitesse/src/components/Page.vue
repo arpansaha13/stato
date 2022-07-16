@@ -1,11 +1,4 @@
 <template>
-  <Navbar
-    :user="user"
-    @login="onLogin"
-    @logout="onLogout"
-    @createAccount="onCreateAccount"
-  />
-
   <article>
     <section>
       <h2>Pages</h2>
@@ -45,29 +38,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue'
-import Navbar from './Navbar.vue'
-
 import '../styles/page.css'
 
 export default defineComponent({
   name: 'Page',
-  components: { Navbar },
-  setup() {
-    const user = ref<any>(null)
-
-    return {
-      user,
-      onLogin() {
-        user.value = { name: 'Jane Doe' }
-      },
-      onLogout() {
-        user.value = null
-      },
-      onCreateAccount() {
-        user.value = { name: 'Jane Doe' }
-      },
-    }
-  },
 })
 </script>

@@ -1,48 +1,25 @@
 .button {
+  @apply inline-block font-bold border-none cursor-pointer rounded-md leading-4;
   font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-weight: 700;
-  border: none;
-  border-radius: 0.3rem;
-  cursor: pointer;
-  display: inline-block;
-  line-height: 1;
   transition: background-color 80ms ease-in-out;
 }
 
 .button--primary {
-  color: white;
-  background-color: #3b82f6;
-}
-.button--primary:hover {
-  background-color: #2563eb;
-}
-.button--primary:active {
-  background-color: #1d4ed8;
+  @apply text-white bg-blue-500 hover:bg-blue-600 active:bg-blue-700;
 }
 
 .button--secondary {
-  color: #111827;
-  background-color: transparent;
-  box-shadow: rgba(0, 0, 0, 0.15) 0px 0px 0px 1px inset;
-}
-.button--secondary:hover {
-  background-color: #f3f4f6;
-}
-.button--secondary:active {
-  background-color: #e5e7eb;
+  @apply text-gray-900 bg-transparent border border-gray-400 shadow hover:bg-gray-100 active:bg-gray-200;
 }
 
 .button--small {
-  font-size: 12px;
-  padding: 10px 16px;
+  @apply text-[12px] px-4 py-2.5;
 }
 
 .button--medium {
-  font-size: 14px;
-  padding: 11px 20px;
+  @apply text-[14px] px-5 py-[11px];
 }
 
 .button--large {
-  font-size: 16px;
-  padding: 12px 24px;
+  @apply text-[16px] px-6 py-3;
 }

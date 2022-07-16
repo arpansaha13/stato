@@ -97,8 +97,12 @@ async function getConfig() {
         emptyOutDir: false, // Must be false
         sourcemap: false,
         rollupOptions: {
-          // Externalise node builtin modules so that they can be used in stato config
-          external: [...builtinModules],
+          // Externalise node built-in modules so that they can be used in stato config
+          external: [
+            ...builtinModules,
+            // Some dependencies of plugins may need the 'node:' prefix
+            ...builtinModules.map((m: string) => `node:${m}`),
+          ],
         },
       },
     })
@@ -121,6 +125,7 @@ async function updateSidebarMap(fileName: string, filePath: string) {
     configFile: false,
     mode: 'development',
     plugins: [
+      ...(statoConfig?.viteOptions?.plugins ?? []),
       vue({
         // Do not transform static assets
         template: {
@@ -269,6 +274,7 @@ export async function dev(args: Argv) {
       alias: statoConfig?.viteOptions?.resolve?.alias,
     },
     plugins: [
+      ...(statoConfig?.viteOptions?.plugins ?? []),
       vue(),
       {
         name: 'stato-iframe',
@@ -291,9 +297,6 @@ export async function dev(args: Argv) {
     ],
     server: {
       port: 3800,
-      // watch: {
-      //   ignored: [resolve(process.cwd(), 'stato', 'context.mjs')],
-      // },
     },
     optimizeDeps: {
       include: ['vue', 'vue/compiler-sfc'],

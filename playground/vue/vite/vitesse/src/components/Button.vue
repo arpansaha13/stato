@@ -5,7 +5,6 @@
 </template>
 
 <script lang="ts">
-import { reactive, computed, defineComponent } from 'vue'
 import '../styles/button.css'
 
 export default defineComponent({

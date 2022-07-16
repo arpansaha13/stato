@@ -1,5 +1,5 @@
 import { defineBook } from '@stato/vue'
-import Page from '../../src/components/Page.vue'
+import Page from '@src/components/Page.vue'
 
 const Template = () => ({
   components: { Page },

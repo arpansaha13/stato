@@ -6,6 +6,7 @@ export interface StatoConfig {
    * Vite config options.
    */
   viteOptions?: {
+    plugins?: UserConfig['plugins']
     resolve?: {
       alias?: AliasOptions
     }

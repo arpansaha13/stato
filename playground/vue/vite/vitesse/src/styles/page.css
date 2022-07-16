@@ -1,31 +1,19 @@
 section {
+  @apply px-5 py-12 text-[14px] leading-6 mx-auto max-w-[600px] text-gray-800;
   font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  line-height: 24px;
-  padding: 48px 20px;
-  margin: 0 auto;
-  max-width: 600px;
-  color: #333;
 }
 section h2 {
-  font-weight: 900;
-  font-size: 32px;
-  line-height: 1;
-  margin: 0 0 4px;
-  display: inline-block;
-  vertical-align: top;
+  @apply inline-block font-black text-[32px] leading-4 mx-1 align-top;
 }
 section p {
-  margin: 1em 0;
+  @apply my-[1em] mx-0;
 }
 section a {
-  text-decoration: none;
-  color: #3b82f6;
+  @apply text-blue-500 no-underline;
 }
 section ul {
-  padding-left: 30px;
-  margin: 1em 0;
+  @apply my-[1em] mx-0 pl-7.5;
 }
 section li {
-  margin-bottom: 8px;
+  @apply mb-2;
 }

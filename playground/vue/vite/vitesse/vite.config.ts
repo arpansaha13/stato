@@ -9,6 +9,8 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Markdown from 'vite-plugin-md'
 import Prism from 'markdown-it-prism'
 import LinkAttributes from 'markdown-it-link-attributes'
+import Unocss from 'unocss/vite'
+import transformerDirective from '@unocss/transformer-directives'
 
 const markdownWrapperClasses = 'prose prose-sm m-auto text-left'
 
@@ -23,6 +25,11 @@ export default defineConfig({
     Vue({
       include: [/\.vue$/, /\.md$/],
       reactivityTransform: true,
+    }),
+
+    // https://github.com/unocss/unocss
+    Unocss({
+      transformers: [transformerDirective()],
     }),
 
     // https://github.com/hannoeru/vite-plugin-pages
@@ -44,7 +51,6 @@ export default defineConfig({
       ],
       dts: 'src/auto-imports.d.ts',
       dirs: ['src/composables', 'src/store'],
-      vueTemplate: true,
     }),
 
     // https://github.com/antfu/unplugin-vue-components

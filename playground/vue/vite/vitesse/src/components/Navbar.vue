@@ -28,13 +28,10 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue'
-import Button from './Button.vue'
 import '../styles/navbar.css'
 
 export default defineComponent({
   name: 'Navbar',
-  components: { Button },
   props: {
     user: {
       type: Object,

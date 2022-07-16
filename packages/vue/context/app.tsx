@@ -29,13 +29,19 @@ export default defineComponent({
 
       // Remove the file ext from the segment
       const temp = segment!.split('.')
-      const ext = temp.pop() as ('js' | 'ts')
+      const ext = temp.pop() as ('js' | 'ts' | 'mjs' | 'cjs')
       segment = temp.join('.')
 
-      if (ext === 'js')
-        return import(`./stories/${segment}.js?t=${timestamp}`)
-      // if (ext === 'ts')
-      return import(`./stories/${segment}.stories.ts?t=${timestamp}`)
+      switch (ext) {
+        case 'js':
+          return import(`./stories/${segment}.js?t=${timestamp}`)
+        case 'ts':
+          return import(`./stories/${segment}.ts?t=${timestamp}`)
+        case 'mjs':
+          return import(`./stories/${segment}.mjs?t=${timestamp}`)
+        case 'cjs':
+          return import(`./stories/${segment}.cjs?t=${timestamp}`)
+      }
     }
     useWsOn('stato-iframe:select-story', async ({ nesting, fileName, storyName }: StoryData) => {
       const path = nesting.join('/')
