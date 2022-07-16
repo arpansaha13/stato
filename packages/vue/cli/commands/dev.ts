@@ -113,12 +113,45 @@ async function getConfig() {
 }
 
 /**
- * Updates the sidebar map or adds a new book to sidebar map. If the `bookName` is not present in the map then it will be added, else it will be overidden/updated.
- * @param fileName
+ * @param event
  * @param filePath path to file relative to root
  */
-async function updateSidebarMap(fileName: string, filePath: string) {
+async function updateSidebarMap(
+  event: 'add' | 'change' | 'unlink',
+  filePath: string
+) {
+  const nPath = normalizePath(filePath)
+  const fileName = basename(filePath)
+  const truncFilePath = normalizePath(filePath).split('/').slice(2).join('/') // Remove 'stato/stories'
+
+  function removeBook() {
+    const data: SidebarRemoveData = {
+      type: 'remove book',
+      path: nPath,
+      fileName,
+    }
+    delete sidebarUpdates.data[nPath]
+    mainSocket.send({
+      type: 'custom',
+      event: 'stato-main:sidebar',
+      data,
+    })
+  }
+  if (event === 'unlink') {
+    // The deleted file may have not been added (if it was not a module)
+    if (!sidebarUpdates.data[nPath]) {
+      return
+    }
+    // When a book is removed, if this book was imported anytime, vite hmr will reload the page
+    // If the book was never imported, then no reload will happen
+    // Just remove the book from the sidebar
+    console.log(`\t> remove ${truncFilePath}`)
+    removeBook()
+    return
+  }
+
   const hash = createHash('md5').update(filePath).digest('base64')
+
   // compile -> import -> delete
   const outDir = resolve(__dirname, '..', 'dev', hash)
   await build({
@@ -162,11 +195,21 @@ async function updateSidebarMap(fileName: string, filePath: string) {
   const { default: book } = await import(
     `${pathToFileURL(resolve(outDir, 'source.mjs')).href}?t=${timestamp}`
   )
-
   // Remove the build result
   rimraf(outDir, { disableGlob: true }, (err) => {
     if (err) console.error(err)
   })
+
+  if (!book) {
+    // If not a module
+    if (!sidebarUpdates.data[nPath]) {
+      return
+    }
+    console.log(`\t> remove ${truncFilePath}`)
+    removeBook()
+    return
+  }
+  const newlyAdded: boolean = !sidebarUpdates.data[normalizePath(filePath)]
 
   const data: SidebarAddUpdateData = {
     type: 'add/update book',
@@ -180,6 +223,9 @@ async function updateSidebarMap(fileName: string, filePath: string) {
     event: 'stato-main:sidebar',
     data,
   })
+  if (newlyAdded) {
+    console.log(`\t> add ${truncFilePath}`)
+  }
 }
 
 function getPublicDir() {
@@ -340,38 +386,17 @@ export async function dev(args: Argv) {
   chokidar
     .watch('stato/stories/**/*.stories.{js,ts}' /* relative to root */, {
       ignored: (path) => {
-        // Ignore dotfiles - https://github.com/paulmillr/chokidar/issues/47#issuecomment-17902834
+        // Ignore dotfiles
         return /(^[.#]|(?:__|~)$)/.test(basename(path))
       },
     })
-    .on('add', async (path) => {
-      const fileName = basename(path)
-      const truncFilePath = normalizePath(path).split('/').slice(2).join('/') // Remove 'stato/stories'
-      console.log(`\t> add ${truncFilePath}`)
-      await updateSidebarMap(fileName, path)
-    })
-    .on('change', async (path) => {
-      const fileName = basename(path)
-      await updateSidebarMap(fileName, path) // In case a story is added or removed
-    })
-    .on('unlink', async (path) => {
-      // When a book is removed, if this book was imported anytime, vite hmr will reload the page
-      // If the book was never imported, then no reload will happen
-      // Just remove the book from the sidebar
-      const fileName = basename(path)
-      const truncFilePath = normalizePath(path).split('/').slice(2).join('/') // Remove 'stato/stories'
-      console.log(`\t> remove ${truncFilePath}`)
-
-      const data: SidebarRemoveData = {
-        type: 'remove book',
-        path: normalizePath(path),
-        fileName,
+    .on('all', async (event, path) => {
+      if (event === 'add' || event === 'change' || event === 'unlink') {
+        // Update sidebar
+        // during initial 'add' events (before 'ready')
+        // if a story is added or removed
+        // if the file just became a module (after creation) and needs to be added
+        updateSidebarMap(event, path)
       }
-      delete sidebarUpdates.data[normalizePath(path)]
-      mainSocket.send({
-        type: 'custom',
-        event: 'stato-main:sidebar',
-        data,
-      })
     })
 }
